@@ -1,0 +1,231 @@
+version: 1
+status: draft
+purpose: "vc-fund-disclosure-mcp가 노출할 MCP tool surface와 사용자 표시 계약"
+
+defaults:
+  db_path: "~/.local/share/moonklabs/vc-funds/vc-funds.sqlite"
+  local_storage_root: "~/Documents/MoonkLabs/VC Disclosures"
+  no_fake_mcp_registration: true
+  no_background_crawler_without_permission: true
+  mcp_imports_enforce_allowed_roots: true
+  cli_explicit_import_root_exception: "vc-funds import is a local user command and may import an explicit path outside allowed roots, but still rejects symlinks, hidden path segments, non-files, and files over the size limit."
+  redact_personal_contacts_by_default: true
+  separate_evidence_guide_notes: true
+
+tools:
+  - name: resolve_user_input
+    category: query
+    description: "사용자 자연어 입력을 intent, 투자사/펀드 후보, 라운드/섹터/지역 조건, 필요한 source로 해석한다."
+    input_schema:
+      query: { type: string }
+      company_context: { type: object, optional: true }
+      include_ambiguous_candidates: { type: boolean, default: true }
+    output_schema:
+      search_query_id: string
+      interpreted_intent: string
+      resolution_status: { type: string, enum: [resolved_exact, resolved_alias, ambiguous, no_match] }
+      resolved_entities: array
+      resolution_candidates: array
+      structured_query_plan: object
+      required_sources: array
+      caveats: array
+    display:
+      type: resolution_report
+      primary_columns:
+        - raw_text
+        - entity_type
+        - candidate_label
+        - match_type
+        - match_score
+        - resolution_status
+
+  - name: get_source_authority
+    category: quality
+    description: "질문 유형별로 어떤 source가 authoritative/supporting/context-only인지 보여준다."
+    input_schema:
+      intent_or_claim_type: { type: string, optional: true }
+    output_schema:
+      source_authority: array
+      caveats: array
+    display:
+      type: source_authority_matrix
+
+  - name: search_vc_database
+    category: query
+    description: "자연어 질문을 받아 투자사, 펀드, 공시 이벤트, 창업자 guide를 통합 검색하고 evidence status와 why_ranked를 반환한다."
+    input_schema:
+      query: { type: string }
+      company_context: { type: object, optional: true }
+      intent_hint: { type: string, optional: true, enum: [investor_fund_holding, startup_fund_search, tips_signal, new_fund_event, founder_education] }
+      limit: { type: number, default: 10 }
+    output_schema:
+      interpreted_intent: string
+      resolution_status: { type: string, enum: [resolved_exact, resolved_alias, ambiguous, no_match] }
+      resolved_entities: array
+      results: array
+      results_item:
+        rank: number
+        title: string
+        entity_type: string
+        entity_id: string
+        evidence_status: { type: string, enum: [verified_official, official_needs_review, guide_only, user_note_only, no_evidence] }
+        resolution_status: { type: string, enum: [resolved_exact, resolved_alias, ambiguous, no_match] }
+        score: number
+        source_name: string
+        source_trust_tier: string
+        authority_scope: string
+        authority_role: { type: string, enum: [authoritative, supporting, context_only, inspect] }
+        source_url: string
+        content_sha256_or_file_sha256: string
+        captured_or_imported_at: string
+        parser_warnings: string
+        caveats: array
+        why_ranked: array
+        next_action: string
+      data_gaps: array
+      recommended_imports: array
+      caveats: array
+    display:
+      type: ranked_search_results
+      primary_columns:
+        - rank
+        - title
+        - entity_type
+        - evidence_status
+        - resolution_status
+        - score
+        - source_name
+        - source_trust_tier
+        - authority_scope
+        - authority_role
+        - why_ranked
+        - next_action
+
+  - name: get_collection_health
+    category: quality
+    description: "source별 수집 상태, 정책 상태, 마지막 run, open quality flag를 보여준다."
+    input_schema:
+      include_disabled: { type: boolean, default: true }
+    output_schema:
+      sources: array
+      warnings: array
+    display:
+      type: health_table
+      primary_columns:
+        - source_name
+        - policy_status
+        - last_run_at
+        - open_quality_flags
+      empty_state: "아직 import된 source가 없습니다. vc-funds setup 후 snapshot 또는 guide를 import하세요."
+
+  - name: import_kvic_snapshot
+    category: ingestion
+    description: "허용된 로컬 import root 안의 KVIC FundFinder HTML/CSV snapshot을 정규화한다. XLS/XLSX는 감지만 하고 unsupported_format으로 반환한다."
+    input_schema:
+      file_path: { type: string }
+      source_url: { type: string, optional: true }
+      captured_at: { type: string, optional: true }
+      group_code: { type: string, optional: true }
+      subcategory_code: { type: string, optional: true }
+    output_schema:
+      ok: boolean
+      status: { type: string, enum: [success, partial, unsupported_format] }
+      source_id: string
+      source_name: string
+      source_url: string
+      file: string
+      format: string
+      content_sha256: string
+      run_id: { type: string, nullable: true }
+      artifact_id: { type: string, nullable: true }
+      snapshot_id: { type: string, nullable: true }
+      raw_row_count: number
+      normalized_row_count: number
+      skipped_row_count: number
+      warning_count: number
+      imported:
+        funds: number
+        investors: number
+        operator_links: number
+        kvic_focus_rows: number
+        kvca_associations: number
+        data_quality_flags: number
+      warnings: array
+      reason: { type: string, optional: true, only_when: unsupported_format }
+      supported_formats: { type: array, optional: true, only_when: unsupported_format }
+    writes:
+      - raw_artifacts
+      - source_snapshots
+      - kvic_fundfinder_categories
+      - funds
+      - investors
+      - fund_operator_links
+      - fund_investment_focus
+
+  - name: import_kvca_snapshot
+    category: ingestion
+    description: "허용된 로컬 import root 안의 KVCA DIVA 조합현황 HTML/CSV snapshot을 정규화한다. XLS/XLSX는 감지만 하고 unsupported_format으로 반환한다."
+    input_schema:
+      file_path: { type: string }
+      source_url: { type: string, optional: true }
+      captured_at: { type: string, optional: true }
+      vc_name: { type: string, optional: true }
+    output_schema:
+      ok: boolean
+      status: { type: string, enum: [success, partial, unsupported_format] }
+      source_id: string
+      source_name: string
+      source_url: string
+      file: string
+      format: string
+      content_sha256: string
+      run_id: { type: string, nullable: true }
+      artifact_id: { type: string, nullable: true }
+      snapshot_id: { type: string, nullable: true }
+      raw_row_count: number
+      normalized_row_count: number
+      skipped_row_count: number
+      warning_count: number
+      imported:
+        funds: number
+        investors: number
+        operator_links: number
+        kvic_focus_rows: number
+        kvca_associations: number
+        data_quality_flags: number
+      warnings: array
+      reason: { type: string, optional: true, only_when: unsupported_format }
+      supported_formats: { type: array, optional: true, only_when: unsupported_format }
+    writes:
+      - raw_artifacts
+      - source_snapshots
+      - kvca_associations
+      - funds
+      - investors
+      - fund_operator_links
+
+response_rules:
+  always_separate:
+    - official_disclosure_evidence
+    - founder_guide
+    - user_notes
+    - caveats
+  always_include_when_available:
+    - source_url
+    - content_sha256_or_file_sha256
+    - captured_or_imported_at
+    - parser_warnings
+    - evidence_status
+    - resolution_status
+    - source_trust_tier
+    - authority_scope
+    - why_ranked
+    - data_gaps
+  never_include_by_default:
+    - personal_mobile_number
+    - personal_email
+    - resident_identifier
+    - full_private_note_body
+  quote_policy:
+    public_pdf: "짧은 근거 문장만 사용하고 원문 전체 재출력 금지"
+    private_note: "요약만 출력하고 원문은 사용자가 명시 요청한 경우에도 최소화"

@@ -85,17 +85,21 @@ vc-funds guide-source add \
 
 | 기능 | 상태 |
 |---|---|
-| SQLite 스키마 + FTS5(trigram) 한국어 검색 | ✅ |
-| HTML 스냅샷 / HWPX / PDF / 텍스트 import | ✅ (PDF는 unpdf 기반, 스캔본 OCR 미지원) |
+| SQLite 스키마(v2, 마이그레이션 지원) + FTS5(trigram) 한국어 검색 | ✅ |
+| HTML/CSV 스냅샷 / HWPX / PDF / 텍스트 import | ✅ (PDF는 unpdf 기반, 스캔본 OCR 미지원) |
+| KVIC/KVCA 테이블 → funds/investors/operator links 정규화 | ✅ v0.2.0 (한국어 별칭 사전, 조/억/만 금액, new_fund 이벤트, quality flags) |
 | 가이드 chunking + `ask` 근거 검색 | ✅ |
 | watch folder (Inbox→Archive 이동, Guides 색인) | ✅ |
 | MCP server (도구 6종) + Claude/Codex 설정 등록 | ✅ |
-| KVIC/KVCA 테이블 → funds/investors 정규화 매핑 | ⬜ 로드맵 (현재는 raw 보존) |
-| `diff` (스냅샷 간 신규/변경 펀드) | ⬜ 로드맵 (정규화 매핑 이후) |
+| GitHub Releases 배포 + install.sh | ✅ |
+| retrieval 계층 (resolve/rank/evidence gate, 도구명 계약 정렬) | ⬜ v0.3.0 — [docs/contracts](docs/contracts/) 기준 |
+| `diff` (스냅샷 간 신규/변경 펀드) | ⬜ 로드맵 |
 | XLS/XLSX 파싱 | ⬜ 로드맵 |
 | doctor의 MCP handshake 자동검사 | ⬜ 로드맵 |
 | browser capture import | ⬜ 로드맵 |
-| Homebrew tap / GitHub Releases 배포 | ⬜ 로드맵 (formula 템플릿 포함) |
+| Homebrew tap | ⬜ 로드맵 (formula 템플릿 포함) |
+
+계약 문서: [docs/contracts/](docs/contracts/) — `moonklabs/k-startup-plugins` 스펙 팩에서 이관한 canonical 계약 (이 리포가 공식 구현체).
 
 ## License
 

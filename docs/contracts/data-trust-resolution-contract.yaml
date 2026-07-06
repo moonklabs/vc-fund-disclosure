@@ -1,0 +1,199 @@
+version: 1
+status: draft
+purpose: "사용자 입력을 신뢰 가능한 VC/AC 공시 source의 정확한 엔티티와 조건으로 해석하기 위한 source trust, resolution, answer gate 계약"
+
+product_priority:
+  primary_job: "스타트업 사용자가 투자사/펀드/라운드/섹터 조건을 자연어로 입력하면, 로컬 DB에서 가장 신뢰 가능한 source를 기준으로 정확한 근거를 찾아준다."
+  non_goals:
+    - "근거 없는 추천을 많이 생성하는 것"
+    - "상용 사이트나 뉴스 검색 결과를 공식 펀드 근거처럼 취급하는 것"
+    - "사용자 입력이 모호한데 임의로 하나를 선택하는 것"
+    - "KVIC/KVCA 사이트를 무허가 background crawler로 순회하는 것"
+
+source_trust_tiers:
+  T0_permissioned_official_feed:
+    label: "공식 허가/제휴 feed"
+    answer_weight: authoritative
+    description: "기관 허가, 공식 API, 데이터 제공 계약으로 받은 정형 데이터"
+    scheduled_collection: allowed_when_contract_recorded
+  T1_user_captured_official_snapshot:
+    label: "사용자 확보 공식 snapshot"
+    answer_weight: authoritative_snapshot
+    description: "사용자가 직접 저장하거나 browser capture한 KVIC/KVCA/TIPS 공식 화면"
+    scheduled_collection: disabled
+  T2_official_disclosure_document:
+    label: "공식 공시 첨부 문서"
+    answer_weight: authoritative_document
+    description: "공식 사이트/협회/기관에서 받은 PDF/HWP/HWPX/HWPML/Office/HTML 문서. 문서 파싱은 kordoc CLI/MCP adapter 경유"
+    scheduled_collection: local_import_only
+  T3_official_public_guide:
+    label: "공식 공개 guide"
+    answer_weight: guidance
+    description: "기관/협회/공공 프로그램이 공개한 창업자 가이드"
+    scheduled_collection: local_import_or_permissioned_fetch
+  T4_user_private_note:
+    label: "사용자 private note"
+    answer_weight: context_only
+    description: "미팅 메모, 사용자가 직접 기록한 정성 정보"
+    scheduled_collection: local_import_only
+  T5_commercial_manual_fact:
+    label: "상용 서비스 수동 입력/export"
+    answer_weight: supporting_context
+    description: "THE VC/혁신의숲/넥스트유니콘 등에서 사용자가 직접 확보한 export나 수동 메모"
+    scheduled_collection: disabled_without_contract
+  T9_unverified_web:
+    label: "일반 웹/뉴스"
+    answer_weight: discovery_only
+    description: "공식 source가 아닌 웹 검색 결과. 후보 발견용이며 공식 펀드 근거로 쓰지 않는다."
+    scheduled_collection: disabled
+
+authoritative_source_matrix:
+  investor_fund_holding:
+    primary:
+      - kvca_diva_associations
+      - kvic_fundfinder
+    supporting:
+      - official_disclosure_documents
+      - tips_public_site
+    never_authoritative:
+      - founder_guide_library
+      - user_notes
+      - commercial_startup_databases
+  startup_fund_search:
+    primary:
+      - kvic_fundfinder
+      - kvca_diva_associations
+      - official_disclosure_documents
+    supporting:
+      - tips_public_site
+    never_authoritative:
+      - user_notes
+  tips_signal:
+    primary:
+      - tips_public_site
+    supporting:
+      - official_disclosure_documents
+    context_only:
+      - user_notes
+    caveat: "TIPS는 창업자가 투자사를 임의 지정한다는 근거가 아니라 투자사의 TIPS 연계 가능성 신호로만 사용한다."
+  new_fund_event:
+    primary:
+      - official_disclosure_documents
+      - kvca_diva_associations
+      - kvic_fundfinder
+    supporting:
+      - tips_public_site
+    never_authoritative:
+      - user_notes
+      - commercial_startup_databases
+  founder_education:
+    primary:
+      - founder_guide_library
+    supporting:
+      - tips_public_site
+    context_only:
+      - user_notes
+    caveat: "법률/세무/투자계약 판단은 일반 설명으로만 제공한다."
+
+input_resolution_pipeline:
+  steps:
+    - step: preserve_raw_input
+      output: raw_user_query
+      rule: "사용자 원문을 search_queries.user_query에 그대로 저장한다."
+    - step: classify_intent
+      output: interpreted_intent
+      rule: "investor_fund_holding, startup_fund_search, tips_signal, new_fund_event, founder_education 중 하나로 분류한다."
+    - step: extract_entities
+      output: extracted_entities
+      entity_types:
+        - investor_name
+        - fund_name
+        - startup_stage
+        - round_type
+        - sector_keyword
+        - region
+        - tips_interest
+        - date_range
+    - step: normalize_entities
+      output: normalized_entities
+      rules:
+        - "공백, 괄호, 주식회사/유한회사/LLC/Inc./Investment 표기 차이를 정규화한다."
+        - "한글/영문/약칭 alias를 investor_aliases와 대조한다."
+        - "펀드명은 숫자, 호수, 모태/스마트/초기/청년 등 핵심 토큰을 보존한다."
+    - step: resolve_candidates
+      output: resolution_candidates
+      rules:
+        - "exact alias match를 fuzzy match보다 우선한다."
+        - "공식 source에서 나온 alias를 user note alias보다 우선한다."
+        - "후보가 2개 이상이고 top score 차이가 작으면 ambiguous로 반환한다."
+        - "임계값 미만 fuzzy match는 no_match로 반환하고 import 액션을 제안한다."
+    - step: map_query_conditions
+      output: structured_query_plan
+      rules:
+        - "startup_stage/round/sector/region은 FundFinder parameter catalog와 fund_investment_focus로 매핑한다."
+        - "자연어 조건을 원격 사이트 POST 파라미터로 바로 보내지 않는다."
+        - "로컬 DB에 해당 category snapshot이 없으면 data gap으로 표시한다."
+    - step: source_authority_plan
+      output: required_sources
+      rule: "intent별 authoritative_source_matrix를 사용해 어떤 source가 있어야 verified_official이 될 수 있는지 결정한다."
+    - step: answer_gate
+      output: answer_status
+      rule: "source authority, hash, parser status, quality flags, resolution ambiguity를 통과해야 verified_official로 표시한다."
+
+resolution_statuses:
+  resolved_exact:
+    user_label: "정확히 식별됨"
+    action: "검색 실행"
+  resolved_alias:
+    user_label: "별칭으로 식별됨"
+    action: "검색 실행, alias 근거 표시"
+  ambiguous:
+    user_label: "후보가 여러 개"
+    action: "후보 목록과 차이를 보여주고 선택 또는 추가 조건 요청"
+  no_match:
+    user_label: "현재 DB에 매칭 없음"
+    action: "필요한 KVIC/KVCA/TIPS snapshot import 제안"
+answer_gates:
+  verified_official_requires:
+    - "resolution_status in [resolved_exact, resolved_alias]"
+    - "at least one authoritative source for intent"
+    - "source_url present"
+    - "content_sha256_or_file_sha256 present"
+    - "parser_status not in [partial, failed]"
+    - "no unresolved critical quality flag"
+  official_needs_review_when:
+    - "authoritative source exists but parser warning exists"
+    - "source snapshot is stale"
+    - "amount/date/operator parsing confidence is low"
+    - "entity resolution is alias-based with medium confidence"
+  no_evidence_when:
+    - "no authoritative source row/document exists"
+    - "only guide/user note/commercial context exists"
+    - "resolution_status in [ambiguous, no_match]"
+
+cli_requirements:
+  commands:
+    - name: "vc-funds resolve <query>"
+      purpose: "사용자 입력이 어떤 투자사/펀드/조건으로 해석되는지 먼저 보여준다."
+    - name: "vc-funds sources"
+      purpose: "source별 trust tier, authoritative scope, freshness, last import를 보여준다."
+    - name: "vc-funds search <query>"
+      purpose: "검색 결과, resolution, source authority, why_ranked를 함께 출력한다."
+  noncanonical_planned_commands:
+    - name: "planned_gap_analysis"
+      purpose: "verified answer를 위해 부족한 source와 import 액션을 출력한다."
+
+mcp_tool_requirements:
+  - "resolve_user_input"
+  - "get_source_authority"
+  - "search_vc_database"
+  - "get_collection_health"
+  - "import_kvic_snapshot"
+  - "import_kvca_snapshot"
+
+quality_checks:
+  - "search result marked verified_official without authoritative source"
+  - "resolved entity missing resolution candidate record"
+  - "fuzzy match accepted without displaying confidence"
+  - "result missing source hash"
+  - "commercial/user-note-only result ranked above official source"

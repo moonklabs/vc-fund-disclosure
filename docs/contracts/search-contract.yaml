@@ -1,0 +1,214 @@
+version: 1
+status: draft
+purpose: "스타트업 사용자가 묻는 자연어 질문을 정확한 VC/AC 공시 evidence 검색 결과로 변환하기 위한 검색/랭킹 계약"
+
+search_principles:
+  - "검색 결과는 공식 공시 evidence, 창업자 guide, 사용자 note를 섞지 않고 각각의 신뢰 레이어를 표시한다."
+  - "사용자 입력은 검색 전에 반드시 resolve_user_input 단계에서 intent, entity, condition 후보로 해석한다."
+  - "P0 상위 결과는 resolve_user_input 후보 일치, 질의 토큰 lexical hit, stage/sector/TIPS condition hit, source trust score를 합산하고 evidence_at은 동점 정렬에만 사용한다."
+  - "source별 authoritative scope는 data-trust-resolution-contract.yaml을 기준으로 한다."
+  - "정확한 근거가 부족하면 빈 결과를 숨기지 말고 data gap과 필요한 import 액션을 먼저 보여준다."
+  - "사용자가 회사 단계/섹터/지역을 말하면 FundFinder parameter catalog로 먼저 조건 코드를 만들고, 자연어를 원격 사이트 파라미터로 바로 보내지 않는다."
+  - "검색 결과마다 why_ranked, evidence_status, caveats, source hash를 남긴다."
+
+query_intents:
+  - intent: investor_fund_holding
+    examples:
+      - "프라이머가 지금 Seed 투자 가능한 펀드가 있어?"
+      - "스파크랩 펀드 보유 근거 보여줘"
+    primary_tool: search_vc_database
+    tool_defaults:
+      intent_hint: investor_fund_holding
+    fallback_tools:
+      - get_source_authority
+      - get_collection_health
+    required_evidence:
+      - investor_alias_match
+      - kvca_or_kvic_fund_link
+      - source_authority_for_investor_fund_holding
+    result_sections:
+      - official_fund_evidence
+      - tips_signal
+      - recent_events
+      - data_gaps
+      - caveats
+
+  - intent: startup_fund_search
+    examples:
+      - "AI SaaS Seed/Pre-A에 맞는 펀드 찾아줘"
+      - "뭉클랩 같은 초기 B2B SaaS가 만날 VC 추천해줘"
+    primary_tool: search_vc_database
+    tool_defaults:
+      intent_hint: startup_fund_search
+    fallback_tools:
+      - get_source_authority
+      - get_collection_health
+    required_evidence:
+      - fundfinder_category_or_focus_match
+      - investor_operator_link
+      - resolved_startup_stage_or_fundfinder_code
+    result_sections:
+      - ranked_funds
+      - matched_investors
+      - missing_sources
+      - next_imports
+      - caveats
+
+  - intent: new_fund_event
+    examples:
+      - "최근 90일 신규 펀드 결성 공시 보여줘"
+      - "새로 생긴 AI/초기 펀드만 알려줘"
+    primary_tool: search_vc_database
+    tool_defaults:
+      intent_hint: new_fund_event
+    fallback_tools:
+      - get_collection_health
+    required_evidence:
+      - event_date_or_imported_at
+      - source_document_or_snapshot
+      - source_authority_for_new_fund_event
+    result_sections:
+      - event_feed
+      - evidence_documents
+      - review_required
+      - caveats
+
+  - intent: founder_education
+    examples:
+      - "시드 투자 미팅 전에 뭘 준비해야 해?"
+      - "TIPS 추천은 창업자가 투자사를 골라서 진행하는 거야?"
+    primary_tool: search_vc_database
+    tool_defaults:
+      intent_hint: founder_education
+    fallback_tools:
+      - get_collection_health
+    required_evidence:
+      - guide_chunk_or_guidance_card
+    result_sections:
+      - short_answer
+      - checklist
+      - next_actions
+      - sources
+      - caveats
+
+  - intent: tips_signal
+    examples:
+      - "TIPS 추천은 창업자가 투자사를 골라서 진행하는 거야?"
+      - "프라이머가 TIPS 연계 투자 후보로 볼 수 있는지 근거 보여줘"
+    primary_tool: search_vc_database
+    tool_defaults:
+      intent_hint: tips_signal
+    fallback_tools:
+      - get_collection_health
+    required_evidence:
+      - tips_operator_or_program_snapshot
+      - source_authority_for_tips_signal
+    result_sections:
+      - tips_signal_evidence
+      - linked_fund_context
+      - missing_sources
+      - caveats
+
+ranking_model:
+  status: "draft_heuristic_matches_runtime"
+  note: "P0 runtime scoring is intentionally simple: entity candidate bonus, lexical hits, condition hits, and trust score. evidence_at is used only as a tie-breaker. Rich recency, dry-powder, parser-quality, and data-completeness scoring are planned, not canonical."
+  components:
+    entity_candidate_bonus:
+      points: 35
+      description: "resolve_user_input 후보와 entity_type/entity_id가 일치할 때 부여"
+    lexical_term_hit:
+      points_per_hit: 12
+      description: "정규화된 질의 토큰이 title/searchable_text에 포함될 때 부여"
+    condition_hit:
+      points_per_hit: 10
+      description: "stage/sector/TIPS 조건이 searchable_text와 일치할 때 부여"
+    trust_score:
+      description: "row.trust_level별 고정 가중치"
+      values:
+        official_snapshot: 35
+        official: 35
+        high: 25
+        medium: 15
+        guide: 12
+        derived: 10
+        default: 8
+    tie_breaker:
+      field: evidence_at
+      order: desc
+      description: "동점일 때 최신 evidence_at을 우선한다."
+  planned_scoring_signals:
+    - recency_and_dry_powder_signal
+    - parser_quality_penalty
+    - data_completeness
+    - unresolved_quality_flag_penalty
+
+evidence_statuses:
+  verified_official:
+    meaning: "공식 source snapshot/document와 정규화 row가 연결되고 critical quality flag가 없음"
+    user_label: "공식 근거 확인"
+  official_needs_review:
+    meaning: "공식 source는 있으나 parser warning, stale snapshot, low confidence, zero-row 의심, manual review 필요"
+    user_label: "공식 근거 있음, 검토 필요"
+  guide_only:
+    meaning: "창업자 guide 근거만 있고 특정 투자사/펀드 공식 근거는 없음"
+    user_label: "일반 가이드"
+  user_note_only:
+    meaning: "사용자 private note만 있고 공식 근거는 없음"
+    user_label: "사용자 메모"
+  no_evidence:
+    meaning: "현재 로컬 DB에 근거 없음. 필요한 import 액션을 표시해야 함"
+    user_label: "근거 없음"
+
+result_shape:
+  required_fields:
+    - rank
+    - title
+    - entity_type
+    - evidence_status
+    - score
+    - why_ranked
+    - source_name
+    - source_trust_tier
+    - authority_scope
+    - authority_role
+    - source_url
+    - content_sha256_or_file_sha256
+    - captured_or_imported_at
+    - parser_warnings
+    - caveats
+  optional_fields:
+    - investor_name
+    - fund_name
+    - amount_krw
+    - formed_or_registered_date
+    - expiry_date
+    - fundfinder_code
+    - tips_signal
+    - next_action
+
+empty_state_rules:
+  no_matching_entity:
+    message: "현재 DB에서 해당 투자사/펀드명을 찾지 못했습니다."
+    actions:
+      - "다른 표기명/영문명으로 다시 검색"
+      - "KVCA snapshot import"
+      - "KVIC FundFinder snapshot import"
+      - "TIPS public page snapshot import"
+  missing_official_evidence:
+    message: "후보는 있으나 공식 펀드 근거가 부족합니다."
+    actions:
+      - "해당 VC명으로 KVCA 조합현황 snapshot import"
+      - "관련 FundFinder category snapshot import"
+      - "신규 공시 PDF/HWP/HWPX/HWPML/Office import. 파싱은 kordoc CLI/MCP adapter 사용"
+  stale_data:
+    message: "근거 snapshot이 오래되었습니다."
+    actions:
+      - "사용자 제스처 기반 browser capture 갱신"
+      - "수동 CSV/HTML snapshot 재import 또는 XLS/XLSX를 CSV/HTML로 다시 저장"
+
+schoolinfo_mcp_lessons:
+  - "사용자는 코드와 파일 위치를 몰라도 자연어로 질문해야 한다."
+  - "MCP와 CLI는 같은 core 검색/파싱 로직을 공유해야 한다."
+  - "정형 데이터와 첨부 문서 파싱 결과를 한 리포트로 묶되 원본 파일/해시/출처를 남겨야 한다."
+  - "로컬 MCP는 파일 경로 기반 parse/import를 제공할 수 있지만 원격 MCP는 서버 파일시스템 접근 도구를 빼야 한다."
+  - "CLI에는 실제 동작 예시와 표 형태 결과를 제공해야 한다."

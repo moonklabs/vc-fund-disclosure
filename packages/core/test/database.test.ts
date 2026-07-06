@@ -35,7 +35,7 @@ describe("openDatabase", () => {
     const row = db
       .query<{ value: string }, []>("SELECT value FROM meta WHERE key = 'schema_version'")
       .get();
-    expect(row?.value).toBe("1");
+    expect(row?.value).toBe("2");
   });
 });
 

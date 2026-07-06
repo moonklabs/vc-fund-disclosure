@@ -84,9 +84,10 @@ describe("importHtmlSnapshot", () => {
     expect(result.tableCount).toBe(1);
 
     const events = listEvents(db);
-    expect(events.length).toBe(1);
-    expect(events[0]?.event_type).toBe("snapshot_imported");
-    expect(events[0]?.summary).toContain("KVIC");
+    const imported = events.find((e) => e.event_type === "snapshot_imported");
+    expect(imported?.summary).toContain("KVIC");
+    // v2: 정규화된 신규 펀드에 new_fund 이벤트가 함께 생성된다
+    expect(events.some((e) => e.event_type === "new_fund")).toBe(true);
   });
 });
 

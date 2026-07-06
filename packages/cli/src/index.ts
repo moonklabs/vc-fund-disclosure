@@ -87,7 +87,7 @@ importCommand
       console.log(
         result.duplicated
           ? `이미 import된 스냅샷입니다 (disclosure #${result.disclosureId})`
-          : `KVIC 스냅샷 import 완료: disclosure #${result.disclosureId} (테이블 ${result.tableCount}개)`,
+          : `KVIC 스냅샷 import 완료: disclosure #${result.disclosureId} — 행 ${result.rawRowCount}개 중 ${result.normalizedRowCount}개 정규화 (펀드 ${result.imported.funds}, 신규 ${result.imported.newFunds}, 운용사 ${result.imported.investors}, 경고 ${result.warnings.length})`,
       );
     } catch (error: unknown) {
       fail(error);
@@ -96,8 +96,8 @@ importCommand
 
 importCommand
   .command("kvca")
-  .description("KVCA DIVA HTML 스냅샷 import")
-  .requiredOption("--file <path>", "저장된 HTML 파일")
+  .description("KVCA DIVA HTML/CSV 스냅샷 import")
+  .requiredOption("--file <path>", "저장된 HTML 또는 CSV 파일")
   .action((options: { file: string }) => {
     try {
       const db = openDatabase(resolveAppPaths(globalOptions()).db);
@@ -105,7 +105,7 @@ importCommand
       console.log(
         result.duplicated
           ? `이미 import된 스냅샷입니다 (disclosure #${result.disclosureId})`
-          : `KVCA 스냅샷 import 완료: disclosure #${result.disclosureId} (테이블 ${result.tableCount}개)`,
+          : `KVCA 스냅샷 import 완료: disclosure #${result.disclosureId} — 행 ${result.rawRowCount}개 중 ${result.normalizedRowCount}개 정규화 (펀드 ${result.imported.funds}, 신규 ${result.imported.newFunds}, 운용사 ${result.imported.investors}, 경고 ${result.warnings.length})`,
       );
     } catch (error: unknown) {
       fail(error);

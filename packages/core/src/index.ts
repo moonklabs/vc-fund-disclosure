@@ -2,7 +2,25 @@ export { VERSION } from "./version.ts";
 export { NotImplementedError, PolicyViolationError } from "./errors.ts";
 export { defaultPaths, type AppPaths, type PathOverrides } from "./paths.ts";
 export { openDatabase, getMeta, setMeta } from "./db/database.ts";
-export { SCHEMA_SQL, SCHEMA_VERSION } from "./db/schema.ts";
+export { SCHEMA_SQL, SCHEMA_VERSION, MIGRATIONS } from "./db/schema.ts";
+export { normalizeText, normalizeKey, normalizeOptionalText } from "./normalize/text.ts";
+export {
+  FIELD_ALIASES,
+  canonicalFieldForHeader,
+  normalizeHeaderName,
+  parseKrwAmount,
+  normalizeDate,
+  splitNames,
+  normalizeStage,
+  normalizeSnapshotRow,
+  type NormalizedSnapshotRow,
+} from "./normalize/fields.ts";
+export { recordsFromTables, recordsFromCsv, type SnapshotRows } from "./parse/rows.ts";
+export {
+  upsertSnapshotEntities,
+  type EntityImportCounters,
+  type EntityImportContext,
+} from "./import/entities.ts";
 export {
   DEFAULT_COLLECTION_POLICY,
   getPolicy,

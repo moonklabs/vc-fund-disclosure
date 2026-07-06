@@ -22,10 +22,12 @@ export interface FundRow {
   id: number;
   name: string;
   code: string | null;
-  vintage: string | null;
-  size_krw: number | null;
   status: string | null;
   source: string;
+  formed_date: string | null;
+  expiry_date: string | null;
+  committed_amount_krw: number | null;
+  /** 운용사명 (복수 GP는 쉼표 구분) */
   investor_name: string | null;
 }
 
@@ -114,12 +116,19 @@ export function searchInvestors(db: Database, query: string, limit = 20): Invest
 export function searchFunds(db: Database, query: string, limit = 20): FundRow[] {
   return db
     .query<FundRow, [string, string, number]>(
-      `SELECT f.id, f.name, f.code, f.vintage, f.size_krw, f.status, f.source,
-              i.name AS investor_name
+      `SELECT f.id, f.name, f.code, f.status, f.source,
+              f.formed_date, f.expiry_date, f.committed_amount_krw,
+              (SELECT GROUP_CONCAT(i.name, ', ')
+               FROM fund_operator_links l JOIN investors i ON i.id = l.investor_id
+               WHERE l.fund_id = f.id) AS investor_name
        FROM funds f
-       LEFT JOIN investors i ON i.id = f.investor_id
-       WHERE f.name LIKE '%' || ? || '%' OR i.name LIKE '%' || ? || '%'
-       ORDER BY f.disclosed_at DESC, f.name LIMIT ?`,
+       WHERE f.name LIKE '%' || ? || '%'
+          OR EXISTS (
+            SELECT 1 FROM fund_operator_links l
+            JOIN investors i ON i.id = l.investor_id
+            WHERE l.fund_id = f.id AND i.name LIKE '%' || ? || '%'
+          )
+       ORDER BY f.latest_evidence_at DESC, f.name LIMIT ?`,
     )
     .all(query, query, limit);
 }
@@ -144,11 +153,13 @@ export function listEvents(db: Database, since?: string, limit = 50): EventRow[]
 export interface DbStatus {
   investors: number;
   funds: number;
+  fundOperatorLinks: number;
   disclosures: number;
   events: number;
   guides: number;
   guideChunks: number;
   guideSources: number;
+  dataQualityFlags: number;
 }
 
 export function getDbStatus(db: Database): DbStatus {
@@ -159,10 +170,12 @@ export function getDbStatus(db: Database): DbStatus {
   return {
     investors: count("investors"),
     funds: count("funds"),
+    fundOperatorLinks: count("fund_operator_links"),
     disclosures: count("disclosures"),
     events: count("events"),
     guides: count("guides"),
     guideChunks: count("guide_chunks"),
     guideSources: count("guide_sources"),
+    dataQualityFlags: count("data_quality_flags"),
   };
 }
