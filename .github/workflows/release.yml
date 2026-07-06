@@ -36,8 +36,24 @@ jobs:
         run: |
           cd dist
           shasum -a 256 ${{ matrix.artifact }} > ${{ matrix.artifact }}.sha256
-      - uses: softprops/action-gh-release@v2
+      - uses: actions/upload-artifact@v4
         with:
-          files: |
+          name: ${{ matrix.artifact }}
+          path: |
             dist/${{ matrix.artifact }}
             dist/${{ matrix.artifact }}.sha256
+          if-no-files-found: error
+
+  # 릴리스 생성은 단일 잡에서 1회만 수행 (matrix 동시 생성 경합 방지)
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          fail_on_unmatched_files: true
