@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: bun-darwin-arm64
+            artifact: vc-funds-darwin-arm64
+          - target: bun-darwin-x64
+            artifact: vc-funds-darwin-x64
+          - target: bun-linux-x64
+            artifact: vc-funds-linux-x64
+          - target: bun-linux-arm64
+            artifact: vc-funds-linux-arm64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: >
+          bun build --compile --minify
+          --target=${{ matrix.target }}
+          packages/cli/src/index.ts
+          --outfile dist/${{ matrix.artifact }}
+      - name: sha256 생성
+        run: |
+          cd dist
+          shasum -a 256 ${{ matrix.artifact }} > ${{ matrix.artifact }}.sha256
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/${{ matrix.artifact }}
+            dist/${{ matrix.artifact }}.sha256

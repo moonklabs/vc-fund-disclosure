@@ -1,0 +1,13 @@
+{
+  "name": "vc-funds",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "vc-funds": "./src/index.ts"
+  },
+  "dependencies": {
+    "@moonklabs/vc-fund-disclosure-core": "workspace:*",
+    "@moonklabs/vc-fund-disclosure-mcp": "workspace:*",
+    "commander": "^13.0.0"
+  }
+}

@@ -1,0 +1,21 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+
+# local databases and snapshots
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+snapshots/
+guides/*.pdf
+guides/*.hwpx
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# local operational state
+.omc/
