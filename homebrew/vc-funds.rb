@@ -4,7 +4,7 @@
 class VcFunds < Formula
   desc "VC/AC 공시정보와 창업자 가이드를 로컬 DB/MCP로 조회하는 CLI"
   homepage "https://github.com/moonklabs/vc-fund-disclosure"
-  version "0.1.0"
+  version "0.1.1"
   license "MIT"
 
   on_macos do
