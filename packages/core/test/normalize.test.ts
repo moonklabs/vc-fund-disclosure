@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { amountScaleFromHeader } from "../src/normalize/fields.ts";
 import {
   canonicalFieldForHeader,
   normalizeDate,
@@ -114,5 +115,38 @@ describe("normalizeSnapshotRow", () => {
     expect(row.fundName).toBeNull();
     expect(row.warnings.some((w) => w.includes("펀드/조합명"))).toBe(true);
     expect(row.warnings.some((w) => w.includes("금액 파싱 실패"))).toBe(true);
+  });
+
+  test("헤더 단위 스케일: 결성총액(백만원) 숫자값에 백만원 스케일 적용", () => {
+    // data.go.kr 자조합 현황: 값은 순수 숫자, 단위는 헤더에
+    const row = normalizeSnapshotRow(
+      {
+        조합명: "스틱일자리창출펀드",
+        대표GP: "스틱벤처스",
+        조합결성일: "2004-06-30",
+        "결성총액(백만원)": "33400",
+      },
+      { source: "kvic", rowIndex: 1 },
+    );
+    expect(row.fundName).toBe("스틱일자리창출펀드");
+    expect(row.investorNames).toEqual(["스틱벤처스"]);
+    expect(row.formedDate).toBe("2004-06-30");
+    // 33,400 백만원 = 334억 원
+    expect(row.committedAmountKrw).toBe(33_400_000_000);
+  });
+
+  test("값에 억 단위가 있으면 헤더 스케일을 이중 적용하지 않는다", () => {
+    // FundFinder: 값에 "억"이 붙어있고 헤더에 (억원) 단위
+    const row = normalizeSnapshotRow(
+      { 펀드명: "예시펀드", "결성총액(억원)": "300억" },
+      { source: "kvic", rowIndex: 1 },
+    );
+    expect(row.committedAmountKrw).toBe(30_000_000_000); // 300억, 이중적용 아님
+  });
+
+  test("amountScaleFromHeader 단위 매핑", () => {
+    expect(amountScaleFromHeader("결성총액(백만원)")).toBe(1_000_000);
+    expect(amountScaleFromHeader("결성총액(억원)")).toBe(100_000_000);
+    expect(amountScaleFromHeader("결성총액")).toBe(1);
   });
 });

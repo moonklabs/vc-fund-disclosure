@@ -9,10 +9,10 @@ import { normalizeKey, normalizeOptionalText, normalizeText } from "./text.ts";
 export const FIELD_ALIASES: Readonly<Record<string, readonly string[]>> = Object.freeze({
   fundName: ["펀드명", "조합명", "투자조합명", "펀드", "fund name", "association name"],
   associationName: ["조합명", "투자조합명", "association name", "asct name"],
-  investorNames: ["운용사", "운용사명", "업무집행조합원", "업무집행조합원명", "vc명", "vc", "회사명", "대표운영사", "대표운용사", "운영사", "operator", "operators"],
+  investorNames: ["운용사", "운용사명", "업무집행조합원", "업무집행조합원명", "vc명", "vc", "회사명", "대표운영사", "대표운용사", "운영사", "대표gp", "gp", "operator", "operators"],
   investorType: ["운영사구분", "운용사구분", "회사구분", "operator type", "investor type"],
   asctId: ["조합id", "조합 id", "asct id", "asct_id", "association id"],
-  formedDate: ["결성일", "결성일자", "설립일", "formed date"],
+  formedDate: ["결성일", "결성일자", "설립일", "조합결성일", "formed date"],
   registeredDate: ["등록일", "등록일자", "registered date"],
   expiryDate: ["만기일", "존속기간종료일", "존속만기", "expiry date", "청산예정일"],
   durationText: ["존속기간", "운용기간", "duration"],
@@ -152,8 +152,27 @@ export interface NormalizedSnapshotRow {
 
 type CanonicalRow = Map<string, string[]>;
 
-function canonicalizeRow(row: Record<string, string>): CanonicalRow {
+interface CanonicalizedRow {
+  canonical: CanonicalRow;
+  /** 금액 필드별 헤더 단위 스케일 (예: "결성총액(백만원)" → 1_000_000) */
+  amountScales: Map<string, number>;
+}
+
+const AMOUNT_FIELDS = new Set(["committedAmountKrw", "investedAmountKrw", "mfundInvestedKrw"]);
+
+/** 헤더 괄호의 화폐 단위를 원(KRW) 스케일로. 단위 표기가 없으면 1. */
+export function amountScaleFromHeader(header: string): number {
+  const h = String(header ?? "").replace(/\s/g, "");
+  if (/조원/.test(h)) return 1_000_000_000_000;
+  if (/억원|억\)/.test(h)) return 100_000_000;
+  if (/백만원/.test(h)) return 1_000_000;
+  if (/천원/.test(h)) return 1_000;
+  return 1;
+}
+
+function canonicalizeRow(row: Record<string, string>): CanonicalizedRow {
   const canonical: CanonicalRow = new Map();
+  const amountScales = new Map<string, number>();
   for (const [header, value] of Object.entries(row)) {
     const field = canonicalFieldForHeader(header);
     if (!field) continue;
@@ -161,12 +180,26 @@ function canonicalizeRow(row: Record<string, string>): CanonicalRow {
     if (normalized === null) continue;
     const bucket = canonical.get(field) ?? [];
     canonical.set(field, [...bucket, normalized]);
+    if (AMOUNT_FIELDS.has(field) && !amountScales.has(field)) {
+      amountScales.set(field, amountScaleFromHeader(header));
+    }
   }
-  return canonical;
+  return { canonical, amountScales };
 }
 
 function firstOf(canonical: CanonicalRow, field: string): string | null {
   return canonical.get(field)?.[0] ?? null;
+}
+
+/**
+ * 금액을 파싱하되, 값에 단위 문자(조/억/만)가 없으면 헤더 단위 스케일을 적용한다.
+ * 값에 이미 단위가 있으면(예 "300억") 스케일을 무시해 이중 적용을 막는다.
+ */
+function parseKrwAmountScaled(value: string | null, scale: number): number | null {
+  const base = parseKrwAmount(value);
+  if (base === null) return null;
+  const hadUnit = /[조억만]/.test(String(value ?? ""));
+  return hadUnit ? base : Math.round(base * scale);
 }
 
 /**
@@ -177,14 +210,12 @@ export function normalizeSnapshotRow(
   row: Record<string, string>,
   options: { source: "kvic" | "kvca" | "tips" | "manual"; rowIndex: number },
 ): NormalizedSnapshotRow {
-  const canonical = canonicalizeRow(row);
+  const { canonical, amountScales } = canonicalizeRow(row);
 
-  let fundName = firstOf(canonical, "fundName");
-  let associationName = firstOf(canonical, "associationName");
-  if (options.source === "kvca") {
-    fundName = fundName ?? associationName;
-    associationName = associationName ?? fundName;
-  }
+  // 조합명은 fundName/associationName 양쪽 별칭이라 소스 무관하게 상호 보완한다.
+  // (벤처투자조합 = 펀드. 자조합 현황은 조합명만, KVCA는 조합명, FundFinder는 펀드명)
+  let fundName = firstOf(canonical, "fundName") ?? firstOf(canonical, "associationName");
+  let associationName = firstOf(canonical, "associationName") ?? fundName;
 
   const fields: NormalizedSnapshotRow = {
     rowIndex: options.rowIndex,
@@ -197,9 +228,18 @@ export function normalizeSnapshotRow(
     registeredDate: normalizeDate(firstOf(canonical, "registeredDate")),
     expiryDate: normalizeDate(firstOf(canonical, "expiryDate")),
     durationText: firstOf(canonical, "durationText"),
-    committedAmountKrw: parseKrwAmount(firstOf(canonical, "committedAmountKrw")),
-    investedAmountKrw: parseKrwAmount(firstOf(canonical, "investedAmountKrw")),
-    mfundInvestedKrw: parseKrwAmount(firstOf(canonical, "mfundInvestedKrw")),
+    committedAmountKrw: parseKrwAmountScaled(
+      firstOf(canonical, "committedAmountKrw"),
+      amountScales.get("committedAmountKrw") ?? 1,
+    ),
+    investedAmountKrw: parseKrwAmountScaled(
+      firstOf(canonical, "investedAmountKrw"),
+      amountScales.get("investedAmountKrw") ?? 1,
+    ),
+    mfundInvestedKrw: parseKrwAmountScaled(
+      firstOf(canonical, "mfundInvestedKrw"),
+      amountScales.get("mfundInvestedKrw") ?? 1,
+    ),
     investmentPurpose: firstOf(canonical, "investmentPurpose"),
     investmentField: firstOf(canonical, "investmentField"),
     categoryCode: firstOf(canonical, "categoryCode"),

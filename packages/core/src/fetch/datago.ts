@@ -35,8 +35,8 @@ export const DATAGO_KVIC_PRESETS = Object.freeze({
     source: "kvic" as const,
   },
   associations: {
-    title: "한국모태펀드 자조합 현황 (결성총액·투자금액)",
-    endpoint: "https://api.odcloud.kr/api/15123555/v1/uddi:bd5ca7c5-c9a8-44c6-8b11-8d871714220e",
+    title: "한국모태펀드 자조합 현황 (조합명·대표GP·결성총액·결성일)",
+    endpoint: "https://api.odcloud.kr/api/15123555/v1/uddi:f635079b-900e-468a-af79-d6c2b9849243",
     source: "kvic" as const,
   },
   "new-invest-by-age": {
@@ -110,12 +110,26 @@ export interface DatagoImportResult {
   result: SnapshotImportResult;
 }
 
+/** totalCount만큼 페이지를 순회해 전체 행을 가져온다. */
+export async function fetchAllDatagoRows(input: DatagoFetchInput): Promise<DatagoRows> {
+  const perPage = input.perPage ?? 1000;
+  const first = await fetchDatagoRows({ ...input, page: 1, perPage });
+  const rows = [...first.rows];
+  const totalPages = Math.ceil(first.totalCount / perPage);
+  for (let page = 2; page <= totalPages; page += 1) {
+    const next = await fetchDatagoRows({ ...input, page, perPage });
+    rows.push(...next.rows);
+    if (next.rows.length === 0) break;
+  }
+  return { rows, totalCount: first.totalCount };
+}
+
 /** 오픈API 행을 CSV로 보관하고 기존 스냅샷 파이프라인으로 import한다. */
 export async function fetchAndImportDatago(
   db: Database,
   input: DatagoImportInput,
 ): Promise<DatagoImportResult> {
-  const { rows, totalCount } = await fetchDatagoRows(input);
+  const { rows, totalCount } = await fetchAllDatagoRows(input);
   if (rows.length === 0) {
     throw new Error("data.go.kr 응답에 데이터가 없습니다.");
   }

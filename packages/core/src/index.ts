@@ -9,6 +9,7 @@ export {
   canonicalFieldForHeader,
   normalizeHeaderName,
   parseKrwAmount,
+  amountScaleFromHeader,
   normalizeDate,
   splitNames,
   normalizeStage,
@@ -36,6 +37,7 @@ export {
 } from "./fetch/kvic.ts";
 export {
   fetchDatagoRows,
+  fetchAllDatagoRows,
   recordsToCsv,
   fetchAndImportDatago,
   DATAGO_KVIC_PRESETS,

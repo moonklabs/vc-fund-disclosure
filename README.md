@@ -107,6 +107,7 @@ vc-funds guide-source add \
 | 온디맨드 수집: `fetch kvic` (동의 게이트) / `fetch datago` (오픈API) + MCP `fetch_and_import` | ✅ v0.3.0 |
 | KVCA DIVA 법정 공시 수집: `fetch diva` (수시/정기) + MCP `fetch_diva_disclosures` | ✅ v0.4.0 |
 | data.go.kr KVIC preset (자조합현황·실적 등 odcloud API) | ✅ v0.4.0 |
+| 자조합 현황 1,216개 (조합명·대표GP·결성총액·결성일, 백만원 단위 스케일) | ✅ v0.4.1 `fetch datago --preset associations` |
 | `setup --with-data` 부트스트랩 수집 | ✅ v0.3.0 |
 | 번들 시드 데이터: 모태펀드 자조합 운용사 327개 (`import seed`, setup 자동 포함) | ✅ v0.3.1 — [출처·라이선스](packages/core/data/README.md) |
 | 가이드 chunking + `ask` 근거 검색 | ✅ |
