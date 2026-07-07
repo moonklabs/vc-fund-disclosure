@@ -54,6 +54,13 @@ curl -fsSL https://raw.githubusercontent.com/moonklabs/vc-fund-disclosure/main/i
 ## 사용 예
 
 ```bash
+# 온디맨드 수집 (robots 고지 동의 필요, 자세한 내용은 docs/COLLECTION_POLICY.md)
+vc-funds fetch kvic --list                # 분류코드 29종 목록
+vc-funds fetch kvic --code AA --consent   # 창업초기 펀드 수집 + 동의 저장
+vc-funds fetch kvic --all                 # 전체 분류코드 수집 (요청 간 지연)
+vc-funds fetch datago --endpoint "https://api.odcloud.kr/api/..." --key "$DATA_GO_KR_SERVICE_KEY"
+
+# 수동 저장 파일 import
 vc-funds import kvic --file "./snapshots/fundfinder-AA02.html" --group AA --code AA02
 vc-funds import kvca --file "./snapshots/kvca-primer.html"
 vc-funds import document --file "./disclosures/new-fund.hwpx" --source kvca
@@ -77,7 +84,8 @@ vc-funds guide-source add \
 ## 수집 경계 (기본 정책)
 
 - **기본 ON**: `manual_snapshot_import`, `watch_folder_import`, `browser_capture_import`, `guide_library_import`
-- **기본 OFF**: `official_feed_fetch` (공식 허가·제휴 후에만), `site_background_crawler` (**초기 버전 활성화 금지** — 코드 레벨에서 거부)
+- **기본 OFF**: `on_demand_fetch` (robots 고지 후 사용자 `--consent`로만 활성화), `official_feed_fetch` (공식 허가·제휴 후에만), `site_background_crawler` (**초기 버전 활성화 금지** — 코드 레벨에서 거부)
+- **게이트 없음**: `fetch datago` — 공공데이터포털 공인 오픈API (serviceKey = 공식 허가)
 
 자세한 내용: [docs/COLLECTION_POLICY.md](docs/COLLECTION_POLICY.md)
 
@@ -88,11 +96,13 @@ vc-funds guide-source add \
 | SQLite 스키마(v2, 마이그레이션 지원) + FTS5(trigram) 한국어 검색 | ✅ |
 | HTML/CSV 스냅샷 / HWPX / PDF / 텍스트 import | ✅ (PDF는 unpdf 기반, 스캔본 OCR 미지원) |
 | KVIC/KVCA 테이블 → funds/investors/operator links 정규화 | ✅ v0.2.0 (한국어 별칭 사전, 조/억/만 금액, new_fund 이벤트, quality flags) |
+| 온디맨드 수집: `fetch kvic` (동의 게이트) / `fetch datago` (오픈API) + MCP `fetch_and_import` | ✅ v0.3.0 |
+| `setup --with-data` 부트스트랩 수집 | ✅ v0.3.0 |
 | 가이드 chunking + `ask` 근거 검색 | ✅ |
 | watch folder (Inbox→Archive 이동, Guides 색인) | ✅ |
 | MCP server (도구 6종) + Claude/Codex 설정 등록 | ✅ |
 | GitHub Releases 배포 + install.sh | ✅ |
-| retrieval 계층 (resolve/rank/evidence gate, 도구명 계약 정렬) | ⬜ v0.3.0 — [docs/contracts](docs/contracts/) 기준 |
+| retrieval 계층 (resolve/rank/evidence gate, 도구명 계약 정렬) | ⬜ v0.4.0 — [docs/contracts](docs/contracts/) 기준 |
 | `diff` (스냅샷 간 신규/변경 펀드) | ⬜ 로드맵 |
 | XLS/XLSX 파싱 | ⬜ 로드맵 |
 | doctor의 MCP handshake 자동검사 | ⬜ 로드맵 |

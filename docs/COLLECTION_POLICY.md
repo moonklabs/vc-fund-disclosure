@@ -11,12 +11,17 @@
 | `browser_capture_import` | 사용자가 보고 있는 페이지의 snapshot import (로드맵) |
 | `guide_library_import` | Guides 폴더에 저장한 공식 가이드 PDF/HWPX import |
 
-## 기본 OFF (허가 필요)
+## 기본 OFF (동의/허가 필요)
 
 | 플래그 | 조건 |
 |---|---|
+| `on_demand_fetch` | **사용자 명령 실행 시에만** 공시 페이지를 분류코드당 1회 조회하는 온디맨드 fetch (`vc-funds fetch kvic`). 대상 사이트 robots.txt가 `Disallow: /`이므로 고지문 확인 후 `--consent`로 사용자가 직접 동의해야 활성화된다. 요청 간 지연(rate limit)을 두고, 원본 HTML은 로컬에만 보관하며 재배포하지 않는다. 백그라운드 실행·스케줄링은 하지 않는다. |
 | `official_feed_fetch` | KVIC/KVCA 공식 허가, 제휴, 유료 계약 후에만 활성화 |
 | `site_background_crawler` | **초기 버전에서 금지** — `setPolicyFlag`가 코드 레벨에서 거부(`PolicyViolationError`). robots.txt/저작권/개인정보 검토를 거친 별도 릴리스에서만 재검토 |
+
+## 게이트 없이 허용 (공인 개방 데이터)
+
+- `vc-funds fetch datago`: 공공데이터포털(data.go.kr) 오픈API 수집. 공식 개방 데이터(라이선스 "이용허락범위 제한 없음")이며 활용신청으로 발급받은 serviceKey 제공 자체가 공식 허가에 해당하므로 동의 게이트 대상이 아니다.
 
 ## 원격 자료 취급
 

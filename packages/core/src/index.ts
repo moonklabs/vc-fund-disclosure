@@ -15,7 +15,34 @@ export {
   normalizeSnapshotRow,
   type NormalizedSnapshotRow,
 } from "./normalize/fields.ts";
-export { recordsFromTables, recordsFromCsv, type SnapshotRows } from "./parse/rows.ts";
+export {
+  recordsFromTables,
+  recordsFromCsv,
+  mergeKvicPurposeRows,
+  type SnapshotRows,
+} from "./parse/rows.ts";
+export {
+  KVIC_FUND_GROUPS,
+  KVIC_FUNDFINDER_BASE,
+  ON_DEMAND_FETCH_NOTICE,
+  fetchKvicGroupHtml,
+  ensureOnDemandFetchEnabled,
+  fetchAndImportKvic,
+  type FetchFn,
+  type KvicFetchOptions,
+  type KvicGroupSnapshot,
+  type KvicFetchImportInput,
+  type KvicFetchImportItem,
+} from "./fetch/kvic.ts";
+export {
+  fetchDatagoRows,
+  recordsToCsv,
+  fetchAndImportDatago,
+  type DatagoFetchInput,
+  type DatagoRows,
+  type DatagoImportInput,
+  type DatagoImportResult,
+} from "./fetch/datago.ts";
 export {
   upsertSnapshotEntities,
   type EntityImportCounters,

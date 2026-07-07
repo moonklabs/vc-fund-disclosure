@@ -52,10 +52,15 @@ function importRow(
   counters: EntityImportCounters,
 ): void {
   if (!row.fundName) {
+    // 펀드명이 없는 소스(예: data.go.kr 운용사 목록)는 운용사만 upsert한다.
+    for (const investorName of row.investorNames) {
+      upsertInvestor(db, investorName, context);
+      counters.investors += 1;
+    }
     insertQualityFlags(db, row.warnings, {
       entityType: "disclosure",
       entityId: context.disclosureId,
-      severity: "critical",
+      severity: row.investorNames.length > 0 ? "warning" : "critical",
       context,
     });
     counters.qualityFlags += row.warnings.length;
@@ -123,18 +128,7 @@ function importRow(
   }
 
   for (const investorName of row.investorNames) {
-    const investor = db
-      .query<{ id: number }, [string, string, string, string]>(
-        `INSERT INTO investors (name, name_normalized, type, source, trust_level, latest_evidence_at)
-         VALUES (?, ?, 'VC/AC', ?, 'official_snapshot', ?)
-         ON CONFLICT(name_normalized, source) DO UPDATE SET
-           name = excluded.name,
-           trust_level = excluded.trust_level,
-           latest_evidence_at = excluded.latest_evidence_at
-         RETURNING id`,
-      )
-      .get(investorName, normalizeKey(investorName), context.source, context.capturedAt);
-    if (!investor) throw new Error(`investor upsert 실패: ${investorName}`);
+    const investor = upsertInvestor(db, investorName, context);
     counters.investors += 1;
 
     db.query(
@@ -202,6 +196,26 @@ function importRow(
     });
     counters.qualityFlags += row.warnings.length;
   }
+}
+
+function upsertInvestor(
+  db: Database,
+  investorName: string,
+  context: EntityImportContext,
+): { id: number } {
+  const investor = db
+    .query<{ id: number }, [string, string, string, string]>(
+      `INSERT INTO investors (name, name_normalized, type, source, trust_level, latest_evidence_at)
+       VALUES (?, ?, 'VC/AC', ?, 'official_snapshot', ?)
+       ON CONFLICT(name_normalized, source) DO UPDATE SET
+         name = excluded.name,
+         trust_level = excluded.trust_level,
+         latest_evidence_at = excluded.latest_evidence_at
+       RETURNING id`,
+    )
+    .get(investorName, normalizeKey(investorName), context.source, context.capturedAt);
+  if (!investor) throw new Error(`investor upsert 실패: ${investorName}`);
+  return investor;
 }
 
 function insertQualityFlags(

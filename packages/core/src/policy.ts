@@ -2,12 +2,17 @@ import type { Database } from "bun:sqlite";
 import { PolicyViolationError } from "./errors.ts";
 import { getMeta, setMeta } from "./db/database.ts";
 
-/** 수집 경계 정책. 기본 ON 4종, 기본 OFF 2종. */
+/** 수집 경계 정책. 기본 ON 4종, 기본 OFF 3종. */
 export interface CollectionPolicy {
   manual_snapshot_import: boolean;
   watch_folder_import: boolean;
   browser_capture_import: boolean;
   guide_library_import: boolean;
+  /**
+   * 사용자가 직접 실행한 명령에서만 공시 페이지를 1회 조회하는 온디맨드 fetch.
+   * 대상 사이트 robots.txt가 자동 수집을 불허하므로, 고지 후 사용자 동의로만 활성화된다.
+   */
+  on_demand_fetch: boolean;
   /** 공식 허가/제휴/유료 계약 후에만 활성화 */
   official_feed_fetch: boolean;
   /** 초기 버전에서는 활성화 금지 */
@@ -19,6 +24,7 @@ export const DEFAULT_COLLECTION_POLICY: Readonly<CollectionPolicy> = Object.free
   watch_folder_import: true,
   browser_capture_import: true,
   guide_library_import: true,
+  on_demand_fetch: false,
   official_feed_fetch: false,
   site_background_crawler: false,
 });

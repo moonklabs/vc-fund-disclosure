@@ -4,6 +4,7 @@ import { z } from "zod";
 import {
   VERSION,
   openDatabase,
+  defaultPaths,
   searchGuides,
   searchInvestors,
   searchFunds,
@@ -11,6 +12,8 @@ import {
   listGuideSources,
   getDbStatus,
   getPolicy,
+  KVIC_FUND_GROUPS,
+  fetchAndImportKvic,
 } from "@moonklabs/vc-fund-disclosure-core";
 
 interface TextResult {
@@ -111,6 +114,49 @@ export function buildServer(dbPath: string): McpServer {
         evidence_type: "user_note",
         results: listGuideSources(db),
       }),
+  );
+
+  server.registerTool(
+    "fetch_and_import",
+    {
+      title: "KVIC 공시 온디맨드 수집",
+      description:
+        "KVIC FundFinder에서 분류코드별 펀드 공시를 1회 조회해 로컬 DB에 import합니다. " +
+        "사용자가 CLI에서 'vc-funds fetch kvic --consent'로 robots 고지에 동의한 뒤에만 동작합니다. " +
+        `분류코드: ${Object.keys(KVIC_FUND_GROUPS).join(", ")}`,
+      inputSchema: {
+        codes: z
+          .array(z.string())
+          .optional()
+          .describe('분류코드 목록 (예: ["AA","AB"]) — 생략 시 전체 수집 (약 1분 소요)'),
+      },
+    },
+    async ({ codes }) => {
+      if (!getPolicy(db).on_demand_fetch) {
+        return jsonResult({
+          evidence_type: "user_note",
+          error: "on_demand_fetch 정책이 비활성화되어 있습니다.",
+          instruction:
+            "터미널에서 'vc-funds fetch kvic --all --consent'를 실행해 robots 고지에 동의하면 활성화됩니다.",
+        });
+      }
+      const paths = defaultPaths({ db: dbPath });
+      const items = await fetchAndImportKvic(db, { codes, archiveDir: paths.archive });
+      return jsonResult({
+        evidence_type: "disclosure",
+        imported: items.map((item) => ({
+          code: item.code,
+          label: item.label,
+          duplicated: item.result.duplicated,
+          rows: item.result.rawRowCount,
+          funds: item.result.imported.funds,
+          new_funds: item.result.imported.newFunds,
+          investors: item.result.imported.investors,
+          source_url: item.sourceUrl,
+          captured_at: item.capturedAt,
+        })),
+      });
+    },
   );
 
   server.registerTool(

@@ -3,7 +3,12 @@ import { readFileSync } from "node:fs";
 import { basename, extname } from "node:path";
 import { sha256Hex } from "../hash.ts";
 import { parseHtmlSnapshot } from "../parse/html.ts";
-import { recordsFromCsv, recordsFromTables, type SnapshotRows } from "../parse/rows.ts";
+import {
+  mergeKvicPurposeRows,
+  recordsFromCsv,
+  recordsFromTables,
+  type SnapshotRows,
+} from "../parse/rows.ts";
 import { normalizeSnapshotRow } from "../normalize/fields.ts";
 import { upsertSnapshotEntities, type EntityImportCounters } from "./entities.ts";
 
@@ -16,6 +21,8 @@ export interface SnapshotImportInput {
   code?: string;
   /** 스냅샷 캡처 시각 (기본: 현재) */
   capturedAt?: string;
+  /** 원본 페이지/API URL (온디맨드 fetch 시 기록) */
+  sourceUrl?: string;
 }
 
 export interface SnapshotImportResult {
@@ -79,6 +86,9 @@ export function importHtmlSnapshot(db: Database, input: SnapshotImportInput): Sn
     title = snapshot.title;
     tableCount = snapshot.tables.length;
     records = recordsFromTables(snapshot.tables);
+    if (input.source === "kvic") {
+      records = mergeKvicPurposeRows(records);
+    }
   }
 
   const normalizedRows = records.rows.map((row, index) =>
@@ -92,6 +102,7 @@ export function importHtmlSnapshot(db: Database, input: SnapshotImportInput): Sn
     title,
     group: input.group ?? null,
     code: input.code ?? null,
+    sourceUrl: input.sourceUrl ?? null,
     tableCount,
     headers: records.headers,
     rawRowCount: records.rows.length,

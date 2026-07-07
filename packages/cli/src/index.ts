@@ -13,6 +13,12 @@ import {
   searchFunds,
   searchGuides,
   listEvents,
+  getPolicy,
+  setPolicyFlag,
+  KVIC_FUND_GROUPS,
+  ON_DEMAND_FETCH_NOTICE,
+  fetchAndImportKvic,
+  fetchAndImportDatago,
   type GuideRole,
 } from "@moonklabs/vc-fund-disclosure-core";
 import { serveMcp } from "@moonklabs/vc-fund-disclosure-mcp";
@@ -45,7 +51,9 @@ program
   .description("DB/보관함/guide library/watch folder 생성 및 MCP 클라이언트 등록")
   .option("--client <client>", "claude | codex | both | none", "claude")
   .option("--command <path>", "MCP 설정에 기록할 실행 파일 경로 override")
-  .action((options: { client: string; command?: string }) => {
+  .option("--with-data", "설치 직후 KVIC 공시 부트스트랩 수집 (--consent 필요)")
+  .option("--consent", "robots 고지에 동의하고 on_demand_fetch 정책을 활성화")
+  .action(async (options: { client: string; command?: string; withData?: boolean; consent?: boolean }) => {
     const clients: SetupClient[] = ["claude", "codex", "both", "none"];
     if (!clients.includes(options.client as SetupClient)) {
       fail(new Error(`--client 값이 잘못되었습니다: ${options.client} (claude|codex|both|none)`));
@@ -55,6 +63,39 @@ program
       client: options.client as SetupClient,
       command: options.command,
     });
+    if (!options.withData) return;
+
+    const db = openDatabase(paths.db);
+    if (!getPolicy(db).on_demand_fetch && !options.consent) {
+      console.error("");
+      console.error("--with-data는 동의가 필요해 건너뜁니다.");
+      console.error(ON_DEMAND_FETCH_NOTICE);
+      return;
+    }
+    if (!getPolicy(db).on_demand_fetch) {
+      setPolicyFlag(db, "on_demand_fetch", true);
+      console.error("on_demand_fetch 정책을 활성화했습니다 (동의 저장됨).");
+    }
+    console.error("[bootstrap] KVIC FundFinder 전체 분류코드 수집 시작 (요청 간 지연 적용)...");
+    try {
+      const items = await fetchAndImportKvic(db, { archiveDir: paths.archive });
+      const totals = items.reduce(
+        (acc, item) => ({
+          funds: acc.funds + item.result.imported.funds,
+          newFunds: acc.newFunds + item.result.imported.newFunds,
+          investors: acc.investors + item.result.imported.investors,
+        }),
+        { funds: 0, newFunds: 0, investors: 0 },
+      );
+      console.error(
+        `[bootstrap] 완료: 분류 ${items.length}개 — 펀드 ${totals.funds} (신규 ${totals.newFunds}), 운용사 ${totals.investors}`,
+      );
+    } catch (error: unknown) {
+      console.error(
+        `[bootstrap] 수집 실패: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      process.exitCode = 1;
+    }
   });
 
 program
@@ -154,6 +195,88 @@ importCommand
         result.duplicated
           ? `이미 색인된 가이드입니다 (guide #${result.guideId}, 청크 ${result.chunkCount}개)`
           : `가이드 import 완료: guide #${result.guideId} (청크 ${result.chunkCount}개)`,
+      );
+    } catch (error: unknown) {
+      fail(error);
+    }
+  });
+
+const fetchCommand = program
+  .command("fetch")
+  .description("공식 공시 데이터 온디맨드 수집 (사용자 명령 실행 시에만 네트워크 접근)");
+
+fetchCommand
+  .command("kvic")
+  .description("KVIC FundFinder 분류코드별 펀드 목록 조회 + import (robots 고지 동의 필요)")
+  .option("--code <codes>", "분류코드 쉼표 구분 (예: AA,AB)")
+  .option("--all", "전체 분류코드 수집")
+  .option("--consent", "robots 고지에 동의하고 on_demand_fetch 정책을 1회 활성화")
+  .option("--list", "분류코드 목록 출력")
+  .action(async (options: { code?: string; all?: boolean; consent?: boolean; list?: boolean }) => {
+    try {
+      if (options.list) {
+        for (const [code, label] of Object.entries(KVIC_FUND_GROUPS)) {
+          console.log(`${code}  ${label}`);
+        }
+        return;
+      }
+      const codes = options.all
+        ? undefined
+        : options.code?.split(",").map((code) => code.trim()).filter(Boolean);
+      if (!options.all && (!codes || codes.length === 0)) {
+        fail(new Error("--code AA,AB 또는 --all 을 지정하세요. 분류코드 목록: vc-funds fetch kvic --list"));
+      }
+      const paths = resolveAppPaths(globalOptions());
+      const db = openDatabase(paths.db);
+      if (!getPolicy(db).on_demand_fetch) {
+        if (!options.consent) {
+          console.error(ON_DEMAND_FETCH_NOTICE);
+          process.exit(1);
+        }
+        setPolicyFlag(db, "on_demand_fetch", true);
+        console.error("on_demand_fetch 정책을 활성화했습니다 (동의 저장됨).");
+      }
+      const items = await fetchAndImportKvic(db, { codes, archiveDir: paths.archive });
+      for (const item of items) {
+        const r = item.result;
+        console.log(
+          r.duplicated
+            ? `[${item.code}] ${item.label}: 변경 없음 (동일 스냅샷)`
+            : `[${item.code}] ${item.label}: 행 ${r.rawRowCount} → 정규화 ${r.normalizedRowCount} (펀드 ${r.imported.funds}, 신규 ${r.imported.newFunds}, 운용사 ${r.imported.investors}) — ${item.filePath}`,
+        );
+      }
+    } catch (error: unknown) {
+      fail(error);
+    }
+  });
+
+fetchCommand
+  .command("datago")
+  .description("공공데이터포털(data.go.kr) 오픈API 수집 + import (공식 개방 데이터, serviceKey 필요)")
+  .requiredOption("--endpoint <url>", "odcloud API endpoint")
+  .option("--key <serviceKey>", "인증키 (미지정 시 env DATA_GO_KR_SERVICE_KEY)")
+  .option("--source <source>", "kvic | kvca | tips | manual", "kvic")
+  .option("--label <label>", "보관 파일명 라벨", "datago")
+  .action(async (options: { endpoint: string; key?: string; source: string; label: string }) => {
+    try {
+      const serviceKey = options.key ?? process.env.DATA_GO_KR_SERVICE_KEY;
+      if (!serviceKey) {
+        fail(new Error("--key 또는 env DATA_GO_KR_SERVICE_KEY로 data.go.kr 인증키를 지정하세요."));
+      }
+      const paths = resolveAppPaths(globalOptions());
+      const db = openDatabase(paths.db);
+      const outcome = await fetchAndImportDatago(db, {
+        endpoint: options.endpoint,
+        serviceKey,
+        archiveDir: paths.archive,
+        source: options.source as "kvic" | "kvca" | "tips" | "manual",
+        label: options.label,
+      });
+      const r = outcome.result;
+      console.log(
+        r.duplicated
+          ? `변경 없음 (동일 데이터, disclosure #${r.disclosureId})`
+          : `data.go.kr import 완료: 행 ${outcome.rowCount}/${outcome.totalCount} — 정규화 ${r.normalizedRowCount} (펀드 ${r.imported.funds}, 운용사 ${r.imported.investors}) — ${outcome.filePath}`,
       );
     } catch (error: unknown) {
       fail(error);
