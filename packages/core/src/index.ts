@@ -71,6 +71,12 @@ export {
   type DocumentImportInput,
   type DocumentImportResult,
 } from "./import/document.ts";
+export {
+  SEED_DATASET,
+  importSeedData,
+  type SeedImportInput,
+  type SeedImportResult,
+} from "./import/seed.ts";
 export { importGuide, type GuideImportInput, type GuideImportResult, type GuideRole } from "./import/guide.ts";
 export {
   addGuideSource,

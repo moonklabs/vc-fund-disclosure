@@ -60,6 +60,9 @@ vc-funds fetch kvic --code AA --consent   # 창업초기 펀드 수집 + 동의 
 vc-funds fetch kvic --all                 # 전체 분류코드 수집 (요청 간 지연)
 vc-funds fetch datago --endpoint "https://api.odcloud.kr/api/..." --key "$DATA_GO_KR_SERVICE_KEY"
 
+# 번들 시드 데이터 (오프라인, data.go.kr 공공 개방 — setup 시 자동 포함)
+vc-funds import seed
+
 # 수동 저장 파일 import
 vc-funds import kvic --file "./snapshots/fundfinder-AA02.html" --group AA --code AA02
 vc-funds import kvca --file "./snapshots/kvca-primer.html"
@@ -98,6 +101,7 @@ vc-funds guide-source add \
 | KVIC/KVCA 테이블 → funds/investors/operator links 정규화 | ✅ v0.2.0 (한국어 별칭 사전, 조/억/만 금액, new_fund 이벤트, quality flags) |
 | 온디맨드 수집: `fetch kvic` (동의 게이트) / `fetch datago` (오픈API) + MCP `fetch_and_import` | ✅ v0.3.0 |
 | `setup --with-data` 부트스트랩 수집 | ✅ v0.3.0 |
+| 번들 시드 데이터: 모태펀드 자조합 운용사 327개 (`import seed`, setup 자동 포함) | ✅ v0.3.1 — [출처·라이선스](packages/core/data/README.md) |
 | 가이드 chunking + `ask` 근거 검색 | ✅ |
 | watch folder (Inbox→Archive 이동, Guides 색인) | ✅ |
 | MCP server (도구 6종) + Claude/Codex 설정 등록 | ✅ |

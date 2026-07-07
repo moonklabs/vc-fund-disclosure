@@ -54,7 +54,7 @@ function importRow(
   if (!row.fundName) {
     // 펀드명이 없는 소스(예: data.go.kr 운용사 목록)는 운용사만 upsert한다.
     for (const investorName of row.investorNames) {
-      upsertInvestor(db, investorName, context);
+      upsertInvestor(db, investorName, context, row.investorType);
       counters.investors += 1;
     }
     insertQualityFlags(db, row.warnings, {
@@ -128,7 +128,7 @@ function importRow(
   }
 
   for (const investorName of row.investorNames) {
-    const investor = upsertInvestor(db, investorName, context);
+    const investor = upsertInvestor(db, investorName, context, row.investorType);
     counters.investors += 1;
 
     db.query(
@@ -202,18 +202,27 @@ function upsertInvestor(
   db: Database,
   investorName: string,
   context: EntityImportContext,
+  investorType?: string | null,
 ): { id: number } {
   const investor = db
-    .query<{ id: number }, [string, string, string, string]>(
+    .query<{ id: number }, (string | null)[]>(
       `INSERT INTO investors (name, name_normalized, type, source, trust_level, latest_evidence_at)
-       VALUES (?, ?, 'VC/AC', ?, 'official_snapshot', ?)
+       VALUES (?, ?, COALESCE(?, 'VC/AC'), ?, 'official_snapshot', ?)
        ON CONFLICT(name_normalized, source) DO UPDATE SET
          name = excluded.name,
+         type = COALESCE(?, investors.type),
          trust_level = excluded.trust_level,
          latest_evidence_at = excluded.latest_evidence_at
        RETURNING id`,
     )
-    .get(investorName, normalizeKey(investorName), context.source, context.capturedAt);
+    .get(
+      investorName,
+      normalizeKey(investorName),
+      investorType ?? null,
+      context.source,
+      context.capturedAt,
+      investorType ?? null,
+    );
   if (!investor) throw new Error(`investor upsert 실패: ${investorName}`);
   return investor;
 }

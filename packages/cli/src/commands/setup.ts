@@ -1,5 +1,10 @@
 import { mkdirSync } from "node:fs";
-import { openDatabase, type AppPaths } from "@moonklabs/vc-fund-disclosure-core";
+import {
+  openDatabase,
+  importSeedData,
+  SEED_DATASET,
+  type AppPaths,
+} from "@moonklabs/vc-fund-disclosure-core";
 import { registerClaudeMcp, registerCodexMcp, type RegisterResult } from "../mcp-config.ts";
 import { resolveExecutableCommand } from "../resolve.ts";
 import { runDoctorChecks, formatDoctorReport } from "../doctor-checks.ts";
@@ -24,6 +29,19 @@ export function runSetup(paths: AppPaths, options: SetupOptions): number {
 
   out(`[2/7] 기본 보관함 생성: ${paths.archive}`);
   mkdirSync(paths.archive, { recursive: true });
+  try {
+    // 번들 시드(공공 개방 데이터, 오프라인) — 재실행 시 sha256 중복으로 no-op
+    const db = openDatabase(paths.db);
+    const seed = importSeedData(db, { archiveDir: paths.archive });
+    db.close();
+    out(
+      seed.result.duplicated
+        ? "      시드 데이터: 이미 import됨"
+        : `      시드 데이터 import: ${SEED_DATASET.title} (운용사 ${seed.result.imported.investors})`,
+    );
+  } catch (error: unknown) {
+    out(`      시드 데이터 import 실패(무시): ${error instanceof Error ? error.message : String(error)}`);
+  }
 
   out(`[3/7] 창업자 guide library 생성: ${paths.guides}`);
   mkdirSync(paths.guides, { recursive: true });

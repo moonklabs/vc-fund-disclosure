@@ -6,6 +6,8 @@ import {
   openDatabase,
   importHtmlSnapshot,
   importDisclosureDocument,
+  importSeedData,
+  SEED_DATASET,
   importGuide,
   addGuideSource,
   listGuideSources,
@@ -148,6 +150,25 @@ importCommand
           ? `이미 import된 스냅샷입니다 (disclosure #${result.disclosureId})`
           : `KVCA 스냅샷 import 완료: disclosure #${result.disclosureId} — 행 ${result.rawRowCount}개 중 ${result.normalizedRowCount}개 정규화 (펀드 ${result.imported.funds}, 신규 ${result.imported.newFunds}, 운용사 ${result.imported.investors}, 경고 ${result.warnings.length})`,
       );
+    } catch (error: unknown) {
+      fail(error);
+    }
+  });
+
+importCommand
+  .command("seed")
+  .description("번들 시드 데이터 import — 모태펀드 자조합 운용사 327개 (data.go.kr 공공 개방, 오프라인)")
+  .action(() => {
+    try {
+      const paths = resolveAppPaths(globalOptions());
+      const db = openDatabase(paths.db);
+      const { filePath, result } = importSeedData(db, { archiveDir: paths.archive });
+      console.log(
+        result.duplicated
+          ? `시드 데이터는 이미 import되어 있습니다 (disclosure #${result.disclosureId})`
+          : `시드 import 완료: ${SEED_DATASET.title} — 행 ${result.rawRowCount}, 운용사 ${result.imported.investors} (${filePath})`,
+      );
+      console.log(`출처: ${SEED_DATASET.sourceUrl} (${SEED_DATASET.license})`);
     } catch (error: unknown) {
       fail(error);
     }

@@ -10,6 +10,7 @@ export const FIELD_ALIASES: Readonly<Record<string, readonly string[]>> = Object
   fundName: ["펀드명", "조합명", "투자조합명", "펀드", "fund name", "association name"],
   associationName: ["조합명", "투자조합명", "association name", "asct name"],
   investorNames: ["운용사", "운용사명", "업무집행조합원", "업무집행조합원명", "vc명", "vc", "회사명", "대표운영사", "대표운용사", "운영사", "operator", "operators"],
+  investorType: ["운영사구분", "운용사구분", "회사구분", "operator type", "investor type"],
   asctId: ["조합id", "조합 id", "asct id", "asct_id", "association id"],
   formedDate: ["결성일", "결성일자", "설립일", "formed date"],
   registeredDate: ["등록일", "등록일자", "registered date"],
@@ -124,6 +125,8 @@ export interface NormalizedSnapshotRow {
   associationName: string | null;
   asctId: string | null;
   investorNames: string[];
+  /** 운용사 유형 (예: 벤처투자회사, 신기술사, LLC) */
+  investorType: string | null;
   formedDate: string | null;
   registeredDate: string | null;
   expiryDate: string | null;
@@ -189,6 +192,7 @@ export function normalizeSnapshotRow(
     associationName,
     asctId: firstOf(canonical, "asctId"),
     investorNames: splitNames(firstOf(canonical, "investorNames")),
+    investorType: firstOf(canonical, "investorType"),
     formedDate: normalizeDate(firstOf(canonical, "formedDate")),
     registeredDate: normalizeDate(firstOf(canonical, "registeredDate")),
     expiryDate: normalizeDate(firstOf(canonical, "expiryDate")),
