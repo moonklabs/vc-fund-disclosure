@@ -23,6 +23,36 @@ export interface DatagoFetchInput {
   fetchFn?: FetchFn;
 }
 
+/**
+ * KVIC 개방 데이터셋 preset (odcloud API 자동변환 대상).
+ * 파일 직다운로드는 신형 데이터셋에서 JS 검증으로 막히므로 odcloud API로 수집한다.
+ * endpoint는 `https://api.odcloud.kr/api/{pk}/v1/{uddi}` 형태이며 serviceKey가 필요하다.
+ */
+export const DATAGO_KVIC_PRESETS = Object.freeze({
+  operators: {
+    title: "한국모태펀드 자조합 운용사정보",
+    endpoint: "https://api.odcloud.kr/api/3060708/v1/uddi:83a33190-1dbf-4e2c-a1f7-90451b544ed5",
+    source: "kvic" as const,
+  },
+  associations: {
+    title: "한국모태펀드 자조합 현황 (결성총액·투자금액)",
+    endpoint: "https://api.odcloud.kr/api/15123555/v1/uddi:bd5ca7c5-c9a8-44c6-8b11-8d871714220e",
+    source: "kvic" as const,
+  },
+  "new-invest-by-age": {
+    title: "한국모태펀드 업력별 신규 투자 실적",
+    endpoint: "https://api.odcloud.kr/api/15090948/v1/uddi:57c34f55-6afe-442e-8b16-ddf829704578",
+    source: "kvic" as const,
+  },
+  "new-invest-by-region": {
+    title: "한국모태펀드 지역별 신규투자 실적",
+    endpoint: "https://api.odcloud.kr/api/15090960/v1/uddi:0a1dc8b8-9d9d-4bf0-af73-a1fc1ae77aed",
+    source: "kvic" as const,
+  },
+});
+
+export type DatagoPresetKey = keyof typeof DATAGO_KVIC_PRESETS;
+
 export interface DatagoRows {
   rows: Array<Record<string, unknown>>;
   totalCount: number;

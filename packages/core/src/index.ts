@@ -38,11 +38,28 @@ export {
   fetchDatagoRows,
   recordsToCsv,
   fetchAndImportDatago,
+  DATAGO_KVIC_PRESETS,
   type DatagoFetchInput,
   type DatagoRows,
   type DatagoImportInput,
   type DatagoImportResult,
+  type DatagoPresetKey,
 } from "./fetch/datago.ts";
+export {
+  DIVA_BASE,
+  DIVA_LIST_PATHS,
+  DIVA_PERIOD_CODES,
+  DIVA_FETCH_NOTICE,
+  parseDivaList,
+  ensureDivaFetchEnabled,
+  fetchDivaListPage,
+  fetchAndImportDiva,
+  type DivaDisclosureType,
+  type DivaPeriod,
+  type DivaListRow,
+  type DivaFetchInput,
+  type DivaFetchResult,
+} from "./fetch/diva.ts";
 export {
   upsertSnapshotEntities,
   type EntityImportCounters,

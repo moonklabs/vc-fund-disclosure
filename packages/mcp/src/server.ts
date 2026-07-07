@@ -14,6 +14,7 @@ import {
   getPolicy,
   KVIC_FUND_GROUPS,
   fetchAndImportKvic,
+  fetchAndImportDiva,
 } from "@moonklabs/vc-fund-disclosure-core";
 
 interface TextResult {
@@ -156,6 +157,37 @@ export function buildServer(dbPath: string): McpServer {
           captured_at: item.capturedAt,
         })),
       });
+    },
+  );
+
+  server.registerTool(
+    "fetch_diva_disclosures",
+    {
+      title: "KVCA DIVA 공시 수집",
+      description:
+        "KVCA DIVA(벤처투자공시시스템)에서 최근 결성/변경 공시 목록을 수집해 로컬 DB에 적재합니다. " +
+        "법정 전자공시 채널이라 '최신 결성 정보'의 핵심 소스입니다. " +
+        "사용자가 CLI에서 'vc-funds fetch diva --consent'로 robots 고지에 동의한 뒤에만 동작합니다.",
+      inputSchema: {
+        type: z.enum(["tmly", "regul"]).optional().describe("tmly=수시(결성/변경), regul=정기 (기본 tmly)"),
+        period: z.enum(["1m", "6m", "1y", "all"]).optional().describe("조회 기간 (기본 1y)"),
+        pages: z.number().int().min(1).max(50).optional().describe("최대 페이지 수 (페이지당 5건, 기본 10)"),
+      },
+    },
+    async ({ type, period, pages }) => {
+      if (!getPolicy(db).on_demand_fetch) {
+        return jsonResult({
+          evidence_type: "user_note",
+          error: "on_demand_fetch 정책이 비활성화되어 있습니다.",
+          instruction: "터미널에서 'vc-funds fetch diva --consent'를 실행해 robots 고지에 동의하세요.",
+        });
+      }
+      const result = await fetchAndImportDiva(db, {
+        type: type ?? "tmly",
+        period: period ?? "1y",
+        maxPages: pages ?? 10,
+      });
+      return jsonResult({ evidence_type: "disclosure", result });
     },
   );
 

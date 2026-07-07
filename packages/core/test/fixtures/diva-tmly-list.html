@@ -1,0 +1,577 @@
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ko" lang="ko">
+
+<head>
+    
+
+
+
+
+
+
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<title>벤처투자회사전자공시시스템</title>
+<link rel="stylesheet" href="/ui/div/css/common.css" />
+<link rel="stylesheet" href="/ui/div/css/layout.css" />
+<link rel="stylesheet" href="/ui/div/css/contents.css" />
+<link rel="stylesheet" href="/ui/div/css/main.css" />
+<script type="text/javascript" src="/ui/div/js/jquery-1.11.1.js"></script>
+<script type="text/javascript" src="/ui/div/js/jquery.easing.1.3.js"></script>
+<script type="text/javascript" src="/ui/div/js/jquery.touchSlider.js"></script>
+<script type="text/javascript" src="/ui/div/js/default.js"></script>
+<script type="text/javascript" src="/ui/div/js/jquery-ui-1.9.1.js"></script>
+<script type="text/javascript" src="/ui/div/js/commonUtil.js"></script>
+<link rel="shortcut icon" href="/favicondiv.ico">
+<script type="text/javascript">
+$(document).ready(function(){
+    // Nav( gnb, lnb ) Setting
+    navSet(-1, -1);
+    
+    document.title=$(".titArea h3").text()||"벤처투자회사 전자공시 시스템"
+});
+
+</script>
+
+</head>
+
+<body>
+
+<!-- skip_navigation -->
+<div class="skip_navigation">
+    <ul>
+        <li><a href="#container">본문 바로가기</a></li>
+        <li><a href="#firstMenu">주메뉴 바로가기</a></li>
+        <li><a href="#footer">푸터 바로가기</a></li>
+    </ul>
+</div>
+<!-- //skip_navigation -->
+
+<!-- wrap -->
+<div class="wrap">
+    
+
+
+
+
+
+
+<script type="text/javascript">
+  //콘택스트페스 - 운영환경 대비
+  var CTX = "";
+  var MSG = "";
+
+  $(document).ready(function() {
+
+  });
+
+  //메뉴 이동
+  function menu(url) {
+    $(location).attr('href', CTX + url);
+  }
+</script>
+
+<!--header -->
+<div id="header">
+	<div class="headerWrap">
+		<h1>
+			<a href="javascript:;" onClick="menu('/div/cmn/DivDisclsMainInq')"><img src="/ui/div/images/common/logo_origin_NEW.gif" alt="DIVA"></a>
+		</h1>
+		<div class="gnbArea">
+			<ul>
+				<li class="gnbMenu01">
+					<a href="javascript:;" id="firstMenu">DIVA안내</a>
+					<div class="depth2">
+						<ul>
+							<li>
+								<a href="javascript:;" onClick="menu('/div/dig/DivDisclsOvrvwInq')" >DIVA소개</a>
+							</li>
+							<li>
+								<a href="javascript:;" onClick="menu('/div/dig/DivDisclsKindInq')" >공시종류/내용</a>
+							</li>
+							<li>
+                                <a href="javascript:;" onClick="menu('/div/dig/DivDisclsInfCentInq')" style="width: 160px">벤처투자정보센터 소개</a>
+                            </li>
+						</ul>
+					</div>
+				</li>
+				<li class="gnbMenu02">
+					<a href="javascript:;">회사별공시</a>
+					<div class="depth2">
+						<ul>
+							<li>
+								<a href="javascript:;" onClick="menu('/div/dic/DivDisclsListInq')">공시회사</a>
+							</li>
+							<li>
+								<a href="javascript:;" onClick="menu('/div/dic/DivTmlydisclsListInq')">수시공시</a>
+							</li>
+							<li>
+								<a href="javascript:;" onClick="menu('/div/dic/DivReguldisclsListInq')">정기공시</a>
+							</li>
+							<li>
+								<a href="javascript:;" onClick="menu('/div/dic/DivFreDisclsListInq')">자율공시</a>
+							</li>
+						</ul>
+					</div>
+				</li>
+				<li class="gnbMenu03">
+					<a href="javascript:;">항목별공시</a>
+					<div class="depth2">
+						<ul>
+							<li>
+								<a href="javascript:;" onClick="menu('/div/dii/DivItmInvstPrfmInq')">투자실적</a>
+							</li>
+							<li>
+								<a href="javascript:;" onClick="menu('/div/dii/DivItmFsInq')">재무제표</a>
+							</li>
+							<li>
+								<a href="javascript:;" onClick="menu('/div/dii/DivItmAssoInq')">조합현황</a>
+							</li>
+							<li>
+								<a href="javascript:;" onClick="menu('/div/dii/DivItmMnpwrInq')">인력현황</a>
+							</li>
+							<li>
+								<a href="javascript:;" onClick="menu('/div/dii/DivItmProfsInq')">전문인력현황</a>
+							</li>
+							<li>
+								<a href="javascript:;" onClick="menu('/div/dii/DivItmViolInq')">법규위반현황</a>
+							</li>
+							<li>
+								<a href="javascript:;" onClick="menu('/div/dii/DivItmVcmapInq')">VC MAP</a>
+							</li>
+                            <li>
+                                <a href="javascript:;" onClick="menu('/div/dii/DivItmVCStatInfoInq')">VC통계정보</a>
+                            </li>
+						</ul>
+					</div>
+				</li>
+				<!-- <li class="gnbMenu02">
+                    <a href="http://www.kvca.or.kr/Program/board/list.html?a_gb=board&a_cd=15&a_item=0&sm=4_1" title="새창 열림" target="_blank">VC 통계정보</a>
+                </li> -->
+				
+				<!-- <li class="gnbMenu04"> 기존 css  -->
+				<!-- <li class="gnbMenu02">
+					<a href="javascript:;">모태펀드통계</a>
+					<div class="depth2" style="height:110px;">
+						<ul>
+							<li>
+								<a href="javascript:;" onClick="menu('/div/dis/CuiFndGpOvrvwInq')" style="width: 200px">펀드및GP소개</a>
+							</li>
+							<li>
+								<a href="javascript:;" onClick="menu('/div/dis/CuiVcMaktStatInq')" style="width: 200px">모태펀드 운용현황</a>
+							</li>
+							<li>
+								<a href="javascript:;" onClick="menu('/div/dis/CuiVcMaktStatAsctInq')" style="width: 200px">자조합 신청 및 선정현황</a>
+							</li>
+							<li>
+								<a href="javascript:;" onClick="menu('/div/dis/CuiVcMaktStatAccInq')" style="margin-left: 0px;width: 200px;">선정연도별/계정별 운용현황</a>
+							</li>
+							<li>
+								<a href="javascript:;" onClick="menu('/div/dis/CuiVcMaktStatFormInq')" style="margin-left: 0px; display: none;">결성연도기준 분야별 운용현황</a>
+							</li>
+							<li>
+								<a href="javascript:;" onClick="menu('/div/dis/CuiVcMaktStatMfundNewInq')" style="width: 200px">연도별 모태자조합 신규투자</a>
+							</li>
+							<li>
+								<a href="javascript:;" onClick="menu('/div/dis/CuiVcMaktStatMasctInq')" style="width: 200px">연도별 모태자조합 투자 잔액</a>
+							</li>
+							<li style="padding-left:206px;">
+								<a href="javascript:;" onClick="menu('/div/dis/CuiVcMaktStatMfundInq')" style="display: none;">모태펀드 회수 현황</a>
+							</li>
+						</ul>
+					</div>
+				</li> -->
+				
+			</ul>
+		</div>
+		<ul class="headerUtil">
+			<li>
+				<a href="javascript:;" onClick="menu('/div/cmn/DivContactInq')">CONTACT</a>
+			</li>
+			<li>
+				<a href="javascript:;" onClick="menu('/die/cmn/DivEngSumExamInq')">ENGLISH</a>
+			</li>
+		</ul>
+	</div>
+</div>
+<!-- //header -->
+
+
+        
+    <!-- 전자공시 - 회사별공시 - 수시공시 -->
+
+
+
+
+
+
+
+<script type="text/javascript">
+  var sYyyyMm = "202605";
+  var sCal = "";
+
+  $(document).ready(function() {
+    navSet(1, 1);
+    sCal = $("#S_DISCLS_YYMM").val().substr(0, 4) + "년 " + $("#S_DISCLS_YYMM").val().substr(5, 2) + "월";
+
+    $("#pDisclsYymm").text(sCal);
+
+    //검색버튼
+    $("#aSearch").on("click", function() {
+      list(1, "N");
+    });
+
+    //전체검색버튼
+    $("#aSearchAll").on("click", function() {
+      list(1, "Y");
+    });
+
+    var sDisclsYymm = $("#S_DISCLS_YYMM").val().replace("-", "");
+    sDisclsYymm = sDisclsYymm.replace(/(.{4})(.{2}).*/, "$1-$2")
+    $("#S_DISCLS_YYMM").val(sDisclsYymm)
+
+  });
+
+  function enterKey() {
+    if(window.event.keyCode == 13) {
+        list(1, "N");
+    }
+  }
+
+  //목록
+  function list(pageNo, totalYn) {
+    if (Number($("#S_DISCLS_YYMM").val().replace(/\-/g,"")) > Number(sYyyyMm)) {
+      alert($("#S_DISCLS_YYMM").val().replace(/(.{4})?\-(.{2}).*/g,"$1년 $2월") + "은 아직 공시되지 않았습니다.");
+      $("#S_DISCLS_YYMM").val(sYyyyMm);
+      return;
+    }
+
+    $("#PAGE_INDEX").val(pageNo);
+    $("#TOTAL_YN").val(totalYn);
+    $("#divaInfo").attr("action", "/div/dic/DivTmlydisclsListInq");
+    $("#divaInfo").submit();
+
+  }
+  //상세페이지 이동
+  function movePageDetailView(OPER_INST_ID, DISCLS_YYMM) {
+    $("#movePageFrom > [name=S_DISCLS_YYMM]").val($("#S_DISCLS_YYMM").val());
+    $("#movePageFrom > [name=OPER_INST_ID]").val(OPER_INST_ID);
+    $("#movePageFrom > [name=DISCLS_YYMM]").val(DISCLS_YYMM);
+    $("#movePageFrom > [name=PAGE_INDEX]").val($("#PAGE_INDEX").val() || 1);
+    $("#movePageFrom > [name=S_COND_PD_CD]").val($("#S_COND_PD_CD").val());
+    $("#movePageFrom > [name=S_OPER_INST_NM]").val($("#S_OPER_INST_NM").val());
+
+    $("#movePageFrom").attr("action", "/div/dic/DivTmlydisclsComOvrvwInq");
+    $("#movePageFrom").submit();
+
+  }
+
+  //회사정보 팝업 조회
+  function openPopOperInstInfo(operInstIdStrParam,DISCLS_YYMM) {
+    window.open("", 'operInstPopup', 'width=684,height=500,top=100,left=100, resizable=yes,scrollbars=yes');
+    $("#operInstInfo > [name=OPER_INST_ID]").val(operInstIdStrParam);
+    $("#operInstInfo > [name=DISCLS_YYMM]").val(DISCLS_YYMM);
+    $("#operInstInfo").attr("action", "/div/cmn/DivCmnComInfo/pop1");
+    $("#operInstInfo").attr("target", "operInstPopup");
+    $("#operInstInfo").submit();
+  }
+</script>
+<form id="operInstInfo" method="post" name="operInstInfo">
+	<input type="hidden" name="OPER_INST_ID" value="" />
+    <input type="hidden" name="DISCLS_YYMM" value="" />
+</form>
+<form id="movePageFrom" method="post" name="movePageFrom">
+	<input type="hidden" name="S_DISCLS_YYMM" value="" />
+	<input type="hidden" name="OPER_INST_ID" value="" />
+	<input type="hidden" name="DISCLS_YYMM" value="" />
+	<input type="hidden" name="PAGE_INDEX" value="" />
+	<input type="hidden" name="S_COND_PD_CD" value="" />
+	<input type="hidden" name="S_OPER_INST_NM" value="" />
+
+</form>
+<form id="divaInfo" action="/div/dic/DivTmlydisclsListInq" method="post">
+	<input id="TOTAL_YN" name="TOTAL_YN" type="hidden" value=""/>
+
+	<!-- container -->
+	<div id="container">
+
+		<div class="lnbArea">
+			<div class="lnbTit">
+				<h2>회사별공시</h2>
+			</div>
+			<div class="lnb">
+				<ul>
+					<li>
+						<a href="javascript:;" onClick="menu('/div/dic/DivDisclsListInq')">공시회사</a>
+					</li>
+					<li class="on">
+						<a href="javascript:;" onClick="menu('/div/dic/DivTmlydisclsListInq')">수시공시</a>
+					</li>
+					<li>
+						<a href="javascript:;" onClick="menu('/div/dic/DivReguldisclsListInq')">정기공시</a>
+					</li>
+					<li>
+						<a href="javascript:;" onClick="menu('/div/dic/DivFreDisclsListInq')">자율공시</a>
+					</li>
+				</ul>
+			</div>
+		</div>
+
+		<!-- contents -->
+		<div class="contents">
+
+			<div class="titArea">
+				<h3>수시공시</h3>
+				<div class="path">
+					<ul>
+						<li>
+							<a href="/div/cmn/DivDisclsMainInq">HOME</a>
+						</li>
+						<li>
+							<span>회사별공시</span>
+						</li>
+						<li>
+							<span>수시공시</span>
+						</li>
+					</ul>
+				</div>
+			</div>
+
+			<!-- searchWrap -->
+			<div class="searchWrap">
+				<div class="inputTypeH">
+					<ul>
+						<li>
+							<p class="searchBigTit" id="pDisclsYymm">0000년 00월</p>
+						</li>
+						<li>
+							<div class="calendarArea">
+
+								<input id="S_DISCLS_YYMM" name="S_DISCLS_YYMM" title="등록기간 날자선택" class="monthPicker" type="text" value="2026-05"/>
+							</div>
+						</li>
+						<li>
+							<label for="S_OPER_INST_NM">벤처투자회사명</label>
+							<div class="ipt_Input" style="width: 350px;">
+								<input id="S_OPER_INST_NM" name="S_OPER_INST_NM" title="벤처투자회사명 입력 검색" onkeyup="enterKey()" style="width:350px;" type="text" value="" autocomplete="off"/>
+							</div>
+						</li>
+						<li>
+							<a href="javascript:;" class="btnBigFix" id="aSearch"> <span>검색</span>
+							</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+			<!-- //searchWrap -->
+
+			<!-- cont -->
+			<div class="cont">
+				<!-- 회사별공시 수시공시 리스트 -->
+				<div class="tblTypeH mt60">
+					<table>
+						<caption>회사별공시 수시공시 리스트</caption>
+						<colgroup>
+							<col style="width: 64px;">
+							<col style="width: 128px;">
+							<col style="width: 336px;">
+							<col style="width: 496px;">
+						</colgroup>
+						<thead>
+							<tr>
+								<th scope="col">번호</th>
+								<th scope="col">공시일자</th>
+								<th scope="col">회사명</th>
+								<th scope="col">보고서명</th>
+							</tr>
+						</thead>
+						<tbody>
+							
+								
+									<tr>
+										<td>429</td>
+										<td>2026-06-27</td>
+										<td class="al">
+											<a href="javascript:void(0)" class="blueLink" title="새창 열림"  onclick="openPopOperInstInfo('OP20220735','202605')">500글로벌매니지먼트코리아</a>
+										</td>
+										<td class="al">
+											<a href="javascript:void(0)" class="blueLink" onclick="movePageDetailView('OP20220735','202605')">2026-05 수시공시</a>
+										</td>
+									</tr>
+								
+									<tr>
+										<td>428</td>
+										<td>2026-06-27</td>
+										<td class="al">
+											<a href="javascript:void(0)" class="blueLink" title="새창 열림"  onclick="openPopOperInstInfo('OP20160017','202605')">NBH캐피탈</a>
+										</td>
+										<td class="al">
+											<a href="javascript:void(0)" class="blueLink" onclick="movePageDetailView('OP20160017','202605')">2026-05 수시공시</a>
+										</td>
+									</tr>
+								
+									<tr>
+										<td>427</td>
+										<td>2026-06-27</td>
+										<td class="al">
+											<a href="javascript:void(0)" class="blueLink" title="새창 열림"  onclick="openPopOperInstInfo('OP20150008','202605')">가이아벤처파트너스</a>
+										</td>
+										<td class="al">
+											<a href="javascript:void(0)" class="blueLink" onclick="movePageDetailView('OP20150008','202605')">2026-05 수시공시</a>
+										</td>
+									</tr>
+								
+									<tr>
+										<td>426</td>
+										<td>2026-06-27</td>
+										<td class="al">
+											<a href="javascript:void(0)" class="blueLink" title="새창 열림"  onclick="openPopOperInstInfo('OP20200081','202605')">강원대학교기술지주회사</a>
+										</td>
+										<td class="al">
+											<a href="javascript:void(0)" class="blueLink" onclick="movePageDetailView('OP20200081','202605')">2026-05 수시공시</a>
+										</td>
+									</tr>
+								
+									<tr>
+										<td>425</td>
+										<td>2026-06-27</td>
+										<td class="al">
+											<a href="javascript:void(0)" class="blueLink" title="새창 열림"  onclick="openPopOperInstInfo('OP20150037','202605')">경기창조경제혁신센터</a>
+										</td>
+										<td class="al">
+											<a href="javascript:void(0)" class="blueLink" onclick="movePageDetailView('OP20150037','202605')">2026-05 수시공시</a>
+										</td>
+									</tr>
+								
+							
+							
+						</tbody>
+					</table>
+				</div>
+				<!-- //회사별공시 수시공시 리스트 -->
+
+				<!-- pagingWrap -->
+				<div class="pagingWrap">
+					
+						<!-- paging -->
+						<div class="paging">
+							<!-- paginate -->
+							<a href="javascript:;" onclick="list(1); return false;" class="pagingFirst">첫 페이지</a>&#160;<a href="javascript:;" onclick="list(1); return false;" class="pagingPrev">이전 페이지</a>&#160;<a href="javascript:;" class="on">1</a>&#160;<a href="javascript:;" onclick="list(2); return false;">2</a>&#160;<a href="javascript:;" onclick="list(3); return false;">3</a>&#160;<a href="javascript:;" onclick="list(4); return false;">4</a>&#160;<a href="javascript:;" onclick="list(5); return false;">5</a>&#160;<a href="javascript:;" onclick="list(6); return false;">6</a>&#160;<a href="javascript:;" onclick="list(7); return false;">7</a>&#160;<a href="javascript:;" onclick="list(8); return false;">8</a>&#160;<a href="javascript:;" onclick="list(9); return false;">9</a>&#160;<a href="javascript:;" onclick="list(10); return false;">10</a>&#160;<a href="javascript:;" onclick="list(11); return false;" class="pagingNext">다음 페이지</a>&#160;<a href="javascript:;" onclick="list(86); return false;" class="pagingLast">마지막 페이지</a>&#160;
+
+							<!-- 페이지 세팅 -->
+							<input id="PAGE_UNIT" name="PAGE_UNIT" type="hidden" value="5"/>
+							<input id="PAGE_INDEX" name="PAGE_INDEX" type="hidden" value="1"/>
+							<!-- //paginate -->
+						</div>
+					
+					<!-- //paging -->
+					<div class="pagingBtnRight">
+						<a href="javascript:;" class="btnSmallFix" id="aSearchAll"> <span>전체보기</span>
+						</a>
+					</div>
+				</div>
+				<!-- //pagingWrap -->
+
+			</div>
+			<!-- //cont -->
+
+		</div>
+		<!-- //contents -->
+
+		<!-- utilBtn -->
+		<div class="utilBtn">
+			<ul>
+				<li>
+					<a href="javascript:;" class="topBtn">TOP</a>
+				</li>
+			</ul>
+		</div>
+		<!--// utilBtn -->
+
+	</div>
+	<!-- //container -->
+
+</form>
+
+    
+
+
+
+
+
+
+<script type="text/javascript">
+function goPage(site) {
+    var url = "";
+
+    switch(site)
+    {
+    case "smba":
+        url = "www.smba.go.kr";
+        break;
+    case "vcsmba":
+        url = "vc.smba.go.kr";
+        break;
+    case "kvic":
+        url = "www.kvic.or.kr";
+        break;
+    case "kvca":
+    	url = "www.kvca.or.kr";
+        break;
+    case "rnd":
+    	url = "www.rndinvest.or.kr";
+        break;
+    case "engel":
+    	url = "www.kban.or.kr";
+        break;
+    case "vcic":
+    	url = "vcic.kvca.or.kr";
+        break;
+    case "pei":
+        url = "www.peinvestor.net";
+        break;
+    default:
+        url = "";
+        break;
+    }
+    
+    window.open("http://"+url);
+}
+</script>
+
+    <!-- footer -->
+    <div id="footer">
+        <div class="footerWrap">
+            <!-- 20160421 수정 : S -->
+            <p class="address">서울특별시 서초구 서초대로 45길 16 한국벤처투자빌딩 2층 Tel : (02)3017-7056 Fax : (02)2156-2120<br />Copyright(C) 2020 MSS. All rights reserved</p>
+            <!-- 20160421 수정 : E -->
+            <div class="footerSiteArea">
+                <div class="footerSite">
+                    <a href="javascript:;">FAMILY SITE</a>
+                    <ul>
+                        <li><a href="javascript:;" onclick="goPage('smba')" title="새창 열림" >중소벤처기업부</a></li>
+                        <li><a href="javascript:;" onclick="goPage('kvca')" title="새창 열림" >한국벤처캐피탈협회</a></li>
+                        <li><a href="javascript:;" onclick="goPage('vcic')" title="새창 열림" >벤처투자정보센터</a></li>
+                        <li><a href="javascript:;" onclick="goPage('pei')" title="새창 열림" >구주유통망</a></li>
+                        <!-- <li><a href="javascript:;" onclick="goPage('rnd')" title="새창 열림" >R&amp;D사업화투자협의회</a></li> -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- //footer -->
+</div>
+<!-- //wrap -->
+
+</body>
+
+</html>

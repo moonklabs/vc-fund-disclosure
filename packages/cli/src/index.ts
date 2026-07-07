@@ -19,8 +19,14 @@ import {
   setPolicyFlag,
   KVIC_FUND_GROUPS,
   ON_DEMAND_FETCH_NOTICE,
+  DIVA_FETCH_NOTICE,
+  DATAGO_KVIC_PRESETS,
   fetchAndImportKvic,
   fetchAndImportDatago,
+  fetchAndImportDiva,
+  type DatagoPresetKey,
+  type DivaDisclosureType,
+  type DivaPeriod,
   type GuideRole,
 } from "@moonklabs/vc-fund-disclosure-core";
 import { serveMcp } from "@moonklabs/vc-fund-disclosure-mcp";
@@ -274,30 +280,86 @@ fetchCommand
 fetchCommand
   .command("datago")
   .description("공공데이터포털(data.go.kr) 오픈API 수집 + import (공식 개방 데이터, serviceKey 필요)")
-  .requiredOption("--endpoint <url>", "odcloud API endpoint")
+  .option("--preset <key>", `KVIC preset (${Object.keys(DATAGO_KVIC_PRESETS).join(", ")})`)
+  .option("--endpoint <url>", "odcloud API endpoint (preset 미사용 시)")
   .option("--key <serviceKey>", "인증키 (미지정 시 env DATA_GO_KR_SERVICE_KEY)")
   .option("--source <source>", "kvic | kvca | tips | manual", "kvic")
   .option("--label <label>", "보관 파일명 라벨", "datago")
-  .action(async (options: { endpoint: string; key?: string; source: string; label: string }) => {
+  .option("--list", "preset 목록 출력")
+  .action(async (options: { preset?: string; endpoint?: string; key?: string; source: string; label: string; list?: boolean }) => {
     try {
+      if (options.list) {
+        for (const [key, p] of Object.entries(DATAGO_KVIC_PRESETS)) {
+          console.log(`${key}  —  ${p.title}`);
+        }
+        return;
+      }
+      const preset = options.preset
+        ? DATAGO_KVIC_PRESETS[options.preset as DatagoPresetKey]
+        : undefined;
+      if (options.preset && !preset) {
+        fail(new Error(`알 수 없는 preset: ${options.preset} (${Object.keys(DATAGO_KVIC_PRESETS).join(", ")})`));
+      }
+      const endpoint = preset?.endpoint ?? options.endpoint;
+      if (!endpoint) {
+        fail(new Error("--preset 또는 --endpoint 를 지정하세요. 목록: vc-funds fetch datago --list"));
+      }
       const serviceKey = options.key ?? process.env.DATA_GO_KR_SERVICE_KEY;
       if (!serviceKey) {
-        fail(new Error("--key 또는 env DATA_GO_KR_SERVICE_KEY로 data.go.kr 인증키를 지정하세요."));
+        fail(
+          new Error(
+            "data.go.kr 인증키가 필요합니다. https://www.data.go.kr 활용신청 후 발급받아\n" +
+              "  export DATA_GO_KR_SERVICE_KEY='발급키'  또는  --key '발급키' 로 지정하세요.",
+          ),
+        );
       }
       const paths = resolveAppPaths(globalOptions());
       const db = openDatabase(paths.db);
       const outcome = await fetchAndImportDatago(db, {
-        endpoint: options.endpoint,
+        endpoint,
         serviceKey,
         archiveDir: paths.archive,
-        source: options.source as "kvic" | "kvca" | "tips" | "manual",
-        label: options.label,
+        source: (preset?.source ?? options.source) as "kvic" | "kvca" | "tips" | "manual",
+        label: options.preset ?? options.label,
       });
       const r = outcome.result;
       console.log(
         r.duplicated
           ? `변경 없음 (동일 데이터, disclosure #${r.disclosureId})`
-          : `data.go.kr import 완료: 행 ${outcome.rowCount}/${outcome.totalCount} — 정규화 ${r.normalizedRowCount} (펀드 ${r.imported.funds}, 운용사 ${r.imported.investors}) — ${outcome.filePath}`,
+          : `data.go.kr import 완료 [${preset?.title ?? "custom"}]: 행 ${outcome.rowCount}/${outcome.totalCount} — 정규화 ${r.normalizedRowCount} (펀드 ${r.imported.funds}, 운용사 ${r.imported.investors}) — ${outcome.filePath}`,
+      );
+    } catch (error: unknown) {
+      fail(error);
+    }
+  });
+
+fetchCommand
+  .command("diva")
+  .description("KVCA DIVA 공시 목록 수집 + import (robots 고지 동의 필요, 법정 결성/변경 공시)")
+  .option("--type <type>", "tmly(수시) | regul(정기)", "tmly")
+  .option("--period <period>", "1m | 6m | 1y | all", "1y")
+  .option("--pages <n>", "최대 페이지 수 (페이지당 5건)", "20")
+  .option("--consent", "robots 고지에 동의하고 on_demand_fetch 정책을 활성화")
+  .action(async (options: { type: string; period: string; pages: string; consent?: boolean }) => {
+    try {
+      const paths = resolveAppPaths(globalOptions());
+      const db = openDatabase(paths.db);
+      if (!getPolicy(db).on_demand_fetch) {
+        if (!options.consent) {
+          console.error(DIVA_FETCH_NOTICE);
+          process.exit(1);
+        }
+        setPolicyFlag(db, "on_demand_fetch", true);
+        console.error("on_demand_fetch 정책을 활성화했습니다 (동의 저장됨).");
+      }
+      const result = await fetchAndImportDiva(db, {
+        type: options.type as DivaDisclosureType,
+        period: options.period as DivaPeriod,
+        maxPages: Number(options.pages),
+      });
+      console.log(
+        `DIVA ${result.type === "tmly" ? "수시" : "정기"}공시 수집 완료: ` +
+          `${result.pagesFetched}페이지, 공시 ${result.rows}건 — 신규 운용사 ${result.newInvestors}, 신규 공시이벤트 ${result.disclosureEvents}`,
       );
     } catch (error: unknown) {
       fail(error);
