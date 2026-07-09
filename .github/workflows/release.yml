@@ -21,6 +21,8 @@ jobs:
             artifact: vc-funds-linux-x64
           - target: bun-linux-arm64
             artifact: vc-funds-linux-arm64
+          - target: bun-windows-x64
+            artifact: vc-funds-windows-x64.exe
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -57,3 +59,20 @@ jobs:
         with:
           files: dist/*
           fail_on_unmatched_files: true
+
+  # install.ps1을 실제 배포된 release 자산으로 그대로 실행해 Windows에서
+  # 다운로드 → 실행 → setup → doctor → query까지 실제로 동작하는지 검증한다.
+  verify-windows:
+    needs: release
+    runs-on: windows-latest
+    steps:
+      - name: install.ps1로 실제 설치 후 동작 검증
+        shell: pwsh
+        run: |
+          irm https://raw.githubusercontent.com/moonklabs/vc-fund-disclosure/main/install.ps1 | iex
+          $exe = Join-Path $env:USERPROFILE ".local\bin\vc-funds.exe"
+          if (-not (Test-Path $exe)) { throw "설치된 실행 파일을 찾을 수 없습니다: $exe" }
+          & $exe --version
+          & $exe setup --client claude --db auto
+          & $exe doctor
+          & $exe query investor 스틱벤처스

@@ -12,6 +12,14 @@
   - `limit`은 롤업 이후 회사 수 기준으로 적용
   - 공시 근거 행은 삭제하지 않고 표시 계층에서만 병합하여 provenance 보존
 
+### Added
+- **Windows 지원**: `windows-x64` 릴리스 타깃 추가, PowerShell 설치 스크립트
+  `install.ps1` 신설 (`irm .../install.ps1 | iex`). 다운로드 파일의 존 식별자를
+  `Unblock-File`로 해제하고, PATH에 설치 디렉터리를 자동 등록.
+  SmartScreen 미서명 경고는 코드사이닝 인증서 발급 전까지 남아 있어 안내 문구로 흡수.
+- `scripts/build-release.sh`: 5개 타깃(darwin×2, linux×2, windows-x64) 빌드와
+  `SHA256SUMS.txt` 생성을 재현 가능하게 정리 (`bun run build:release`).
+
 ### Changed
 - **`install.sh` macOS 하드닝**: 다운로드 후 `com.apple.quarantine` 제거 및
   ad-hoc 재서명(`codesign --force --sign -`)을 자동 수행. Apple Silicon에서

@@ -20,3 +20,20 @@ jobs:
         run: |
           bun run build
           ./dist/vc-funds --version
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - name: Windows 바이너리 빌드 + 실행 검증
+        shell: bash
+        run: |
+          bun build --compile --minify --target=bun-windows-x64 packages/cli/src/index.ts --outfile dist/vc-funds-windows-x64.exe
+          ./dist/vc-funds-windows-x64.exe --version
+          ./dist/vc-funds-windows-x64.exe setup --client claude --db auto
+          ./dist/vc-funds-windows-x64.exe doctor
+          ./dist/vc-funds-windows-x64.exe query investor 스틱벤처스

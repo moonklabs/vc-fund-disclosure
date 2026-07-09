@@ -30,11 +30,23 @@ vc-funds setup --client claude --db auto
 vc-funds doctor
 ```
 
-Homebrew를 쓰지 않는 경우:
+Homebrew를 쓰지 않는 macOS/Linux:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/moonklabs/vc-fund-disclosure/main/install.sh | sh
+vc-funds setup --client claude --db auto
+vc-funds doctor
 ```
+
+Windows (PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/moonklabs/vc-fund-disclosure/main/install.ps1 | iex
+vc-funds setup --client claude --db auto
+vc-funds doctor
+```
+
+처음 실행 시 "Windows에서 PC를 보호했습니다" 경고가 나오면 **추가 정보 → 실행**을 선택하세요. 코드사이닝 인증서 발급 전까지 미서명 실행 파일에 나타나는 정상 경고입니다. WSL을 쓴다면 위 macOS/Linux `install.sh` 경로를 그대로 사용해도 됩니다.
 
 `setup`은 다음 7단계를 자동 처리합니다: ① SQLite DB 생성 ② 보관함(Archive) ③ guide library(Guides) ④ watch folder(Inbox) ⑤ Claude/Codex MCP 설정 등록 ⑥ 설정 백업 ⑦ doctor 실행.
 
@@ -133,7 +145,7 @@ vc-funds guide-source add \
 | 가이드 chunking + `ask` 근거 검색 | ✅ |
 | watch folder (Inbox→Archive 이동, Guides 색인) | ✅ |
 | MCP server (도구 6종) + Claude/Codex 설정 등록 | ✅ |
-| GitHub Releases 배포 + install.sh | ✅ |
+| GitHub Releases 배포 + install.sh(macOS/Linux) + install.ps1(Windows) | ✅ v0.4.2 — 5개 타깃(darwin×2, linux×2, windows-x64) |
 | retrieval 계층 (resolve/rank/evidence gate, 도구명 계약 정렬) | ⬜ v0.4.0 — [docs/contracts](docs/contracts/) 기준 |
 | `diff` (스냅샷 간 신규/변경 펀드) | ⬜ 로드맵 |
 | XLS/XLSX 파싱 | ⬜ 로드맵 |

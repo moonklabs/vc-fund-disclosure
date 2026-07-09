@@ -13,7 +13,7 @@ class VcFunds < Formula
       sha256 "b7854fe3992a3888c050921f5c56d736930f8b771602d7abef48f15322483952"
     else
       url "https://github.com/moonklabs/vc-fund-disclosure/releases/download/v#{version}/vc-funds-darwin-x64"
-      sha256 "960164b70401a900f25a3e942559a360178b3e1fa93ed62373a8eee74cd71173"
+      sha256 "dbbcf75fac100195c75b12b7193d4c84b6b4d52f14edf7aaf5753f52cff32016"
     end
   end
 

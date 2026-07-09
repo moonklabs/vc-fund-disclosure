@@ -10,7 +10,8 @@
     "dev": "bun packages/cli/src/index.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
-    "build": "bun build --compile --minify packages/cli/src/index.ts --outfile dist/vc-funds"
+    "build": "bun build --compile --minify packages/cli/src/index.ts --outfile dist/vc-funds",
+    "build:release": "sh scripts/build-release.sh"
   },
   "devDependencies": {
     "@types/bun": "^1.2.0",
