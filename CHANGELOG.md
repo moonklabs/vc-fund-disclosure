@@ -25,6 +25,15 @@
   ad-hoc 재서명(`codesign --force --sign -`)을 자동 수행. Apple Silicon에서
   Gatekeeper가 실행을 SIGKILL(exit 137)로 차단하던 신규 사용자 온보딩 블로커 해소.
 
+### Known Issues
+- **업그레이드 후 MCP 도구가 예전 결과를 반환할 수 있음**: `vc-funds mcp serve`는
+  Claude/Codex 세션이 시작될 때 뜬 뒤 계속 살아있는 stdio 프로세스라, 바이너리를
+  새 버전으로 교체해도 그 프로세스는 재시작 전까지 메모리에 있던 이전 코드로 계속
+  응답한다. 예: v0.4.2로 업그레이드해도 이미 켜져 있던 세션에서는 투자사 검색
+  중복 병합(`sources[]`/`evidence_count`)이 반영되지 않을 수 있다. CLI로 직접
+  실행(`vc-funds query ...`)하면 항상 새 프로세스라 즉시 반영된다.
+  **해결: `vc-funds` 업그레이드 후 Claude Code/Codex를 재시작한다.**
+
 ## [0.4.1] - 2026-07-07
 
 - 자조합 현황 1,216개 수집, 금액 단위 스케일 정규화.
