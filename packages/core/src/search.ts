@@ -14,9 +14,87 @@ export interface InvestorRow {
   id: number;
   name: string;
   type: string | null;
+  /** canonical(대표) 행의 공시처. 전체 공시처는 sources 참조. */
   source: string;
   registered_at: string | null;
+  /** 이 회사가 확인된 모든 공시처 (예: ["kvca","kvic"]). 복수면 교차 검증 신호. */
+  sources: string[];
+  /** name_normalized 기준으로 병합된 공시 근거 행 수. */
+  evidence_count: number;
 }
+
+/** 회사 단위 롤업을 위한 내부 후보 행 (검색 매칭 결과 원본). */
+interface InvestorCandidate {
+  id: number;
+  name: string;
+  type: string | null;
+  source: string;
+  registered_at: string | null;
+  name_normalized: string;
+  latest_evidence_at: string | null;
+  link_count: number;
+}
+
+/** KVCA 스냅샷은 업종을 뭉뚱그린 'VC/AC'로만 표기하므로 구체 유형보다 후순위. */
+function isGenericType(type: string | null): boolean {
+  return type === null || type === "VC/AC";
+}
+
+/**
+ * 같은 회사(name_normalized)의 여러 공시처 행 중 canonical(대표) 행을 고른다.
+ * 우선순위: 펀드 연결 보유 → 구체 업종 유형 → 최신 근거 → id 오름차순.
+ */
+function compareCanonical(a: InvestorCandidate, b: InvestorCandidate): number {
+  if (a.link_count !== b.link_count) return b.link_count - a.link_count;
+  const aGeneric = isGenericType(a.type) ? 1 : 0;
+  const bGeneric = isGenericType(b.type) ? 1 : 0;
+  if (aGeneric !== bGeneric) return aGeneric - bGeneric;
+  const aEvidence = a.latest_evidence_at ?? "";
+  const bEvidence = b.latest_evidence_at ?? "";
+  if (aEvidence !== bEvidence) return aEvidence < bEvidence ? 1 : -1;
+  return a.id - b.id;
+}
+
+/**
+ * 검색 후보 행을 name_normalized 기준으로 병합한다.
+ * KVIC/KVCA 등 공시처별로 중복 적재된 동일 회사를 한 건으로 롤업하되,
+ * 후보 순서(FTS rank 또는 이름순)를 보존하고 limit까지 자른다.
+ */
+function rollupInvestors(candidates: InvestorCandidate[], limit: number): InvestorRow[] {
+  const groups = new Map<string, InvestorCandidate[]>();
+  const order: string[] = [];
+  for (const row of candidates) {
+    const existing = groups.get(row.name_normalized);
+    if (existing) {
+      existing.push(row);
+    } else {
+      groups.set(row.name_normalized, [row]);
+      order.push(row.name_normalized);
+    }
+  }
+
+  const results: InvestorRow[] = [];
+  for (const key of order) {
+    if (results.length >= limit) break;
+    const rows = groups.get(key)!;
+    const canonical = [...rows].sort(compareCanonical)[0]!;
+    const sources = [...new Set(rows.map((row) => row.source))].sort();
+    results.push({
+      id: canonical.id,
+      name: canonical.name,
+      type: canonical.type,
+      source: canonical.source,
+      registered_at: canonical.registered_at,
+      sources,
+      evidence_count: rows.length,
+    });
+  }
+  return results;
+}
+
+const INVESTOR_CANDIDATE_COLUMNS = `i.id, i.name, i.type, i.source, i.registered_at,
+        i.name_normalized, i.latest_evidence_at,
+        (SELECT COUNT(*) FROM fund_operator_links l WHERE l.investor_id = i.id) AS link_count`;
 
 export interface FundRow {
   id: number;
@@ -93,24 +171,28 @@ export function searchGuides(db: Database, query: string, limit = 5): GuideSearc
 }
 
 export function searchInvestors(db: Database, query: string, limit = 20): InvestorRow[] {
+  // limit은 롤업(회사 단위 병합) 이후에 적용해야 하므로 후보는 제한 없이 모두 조회한다.
+  // (investors 테이블은 수백 행 규모라 전량 매칭 스캔 비용이 무시할 만하다.)
   if (isFtsQueryable(query)) {
     const hits = db
-      .query<InvestorRow, [string, number]>(
-        `SELECT i.id, i.name, i.type, i.source, i.registered_at
+      .query<InvestorCandidate, [string]>(
+        `SELECT ${INVESTOR_CANDIDATE_COLUMNS}
          FROM investors_fts f
          JOIN investors i ON i.id = f.rowid
          WHERE investors_fts MATCH ?
-         ORDER BY rank LIMIT ?`,
+         ORDER BY rank`,
       )
-      .all(ftsLiteral(query), limit);
-    if (hits.length > 0) return hits;
+      .all(ftsLiteral(query));
+    if (hits.length > 0) return rollupInvestors(hits, limit);
   }
-  return db
-    .query<InvestorRow, [string, number]>(
-      `SELECT id, name, type, source, registered_at
-       FROM investors WHERE name LIKE '%' || ? || '%' ORDER BY name LIMIT ?`,
+  const candidates = db
+    .query<InvestorCandidate, [string]>(
+      `SELECT ${INVESTOR_CANDIDATE_COLUMNS}
+       FROM investors i
+       WHERE i.name LIKE '%' || ? || '%' ORDER BY i.name`,
     )
-    .all(query, limit);
+    .all(query);
+  return rollupInvestors(candidates, limit);
 }
 
 export function searchFunds(db: Database, query: string, limit = 20): FundRow[] {
