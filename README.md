@@ -10,7 +10,7 @@ VC/AC 투자사 공시정보(KVIC FundFinder, KVCA DIVA, TIPS)와 초기 창업�
 |---|---|
 | `packages/core` (`vc-fund-disclosure-core`) | HTML/CSV/PDF/HWPX import·정규화, 가이드 chunking, FTS 검색, 수집 정책 |
 | `packages/cli` (`vc-funds`) | setup, doctor, import, query, ask, events, guide-source, watch, mcp serve |
-| `packages/mcp` (`vc-fund-disclosure-mcp`) | stdio MCP server — 펀드 근거·창업자 가이드 검색 도구 6종 |
+| `packages/mcp` (`vc-fund-disclosure-mcp`) | stdio MCP server — 펀드 근거·창업자 가이드 검색 도구 8종 |
 
 ## 개발 환경
 
@@ -22,15 +22,9 @@ bun run build       # 단일 실행 파일 → dist/vc-funds
 bun run dev -- doctor   # 개발 모드 실행
 ```
 
-## 설치 (배포 후 목표 UX)
+## 설치
 
-```bash
-brew install moonklabs/tap/vc-funds
-vc-funds setup --client claude --db auto
-vc-funds doctor
-```
-
-Homebrew를 쓰지 않는 macOS/Linux:
+macOS/Linux:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/moonklabs/vc-fund-disclosure/main/install.sh | sh
@@ -47,6 +41,8 @@ vc-funds doctor
 ```
 
 처음 실행 시 "Windows에서 PC를 보호했습니다" 경고가 나오면 **추가 정보 → 실행**을 선택하세요. 코드사이닝 인증서 발급 전까지 미서명 실행 파일에 나타나는 정상 경고입니다. WSL을 쓴다면 위 macOS/Linux `install.sh` 경로를 그대로 사용해도 됩니다.
+
+Homebrew tap(`brew install moonklabs/tap/vc-funds`)은 준비 중입니다 — formula 템플릿은 `homebrew/vc-funds.rb`에 있습니다.
 
 `setup`은 다음 7단계를 자동 처리합니다: ① SQLite DB 생성 ② 보관함(Archive) ③ guide library(Guides) ④ watch folder(Inbox) ⑤ Claude/Codex MCP 설정 등록 ⑥ 설정 백업 ⑦ doctor 실행.
 
