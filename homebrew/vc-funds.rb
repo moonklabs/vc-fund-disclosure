@@ -4,26 +4,26 @@
 class VcFunds < Formula
   desc "VC/AC 공시정보와 창업자 가이드를 로컬 DB/MCP로 조회하는 CLI"
   homepage "https://github.com/moonklabs/vc-fund-disclosure"
-  version "0.2.0"
+  version "0.4.2"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.arm?
       url "https://github.com/moonklabs/vc-fund-disclosure/releases/download/v#{version}/vc-funds-darwin-arm64"
-      sha256 "REPLACE_WITH_DARWIN_ARM64_SHA256"
+      sha256 "b7854fe3992a3888c050921f5c56d736930f8b771602d7abef48f15322483952"
     else
       url "https://github.com/moonklabs/vc-fund-disclosure/releases/download/v#{version}/vc-funds-darwin-x64"
-      sha256 "REPLACE_WITH_DARWIN_X64_SHA256"
+      sha256 "960164b70401a900f25a3e942559a360178b3e1fa93ed62373a8eee74cd71173"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
       url "https://github.com/moonklabs/vc-fund-disclosure/releases/download/v#{version}/vc-funds-linux-arm64"
-      sha256 "REPLACE_WITH_LINUX_ARM64_SHA256"
+      sha256 "f3bb4cb7166488bf105474e9c3f1b606cfd0d657a3ca66291805add34931fabb"
     else
       url "https://github.com/moonklabs/vc-fund-disclosure/releases/download/v#{version}/vc-funds-linux-x64"
-      sha256 "REPLACE_WITH_LINUX_X64_SHA256"
+      sha256 "433fe07b45a8f9e9a5925e4e5b86d63c3156eccc053722d420d7b029d76f01c2"
     end
   end
 

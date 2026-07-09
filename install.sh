@@ -29,6 +29,15 @@ mkdir -p "$INSTALL_DIR"
 curl -fSL "$url" -o "$INSTALL_DIR/vc-funds"
 chmod +x "$INSTALL_DIR/vc-funds"
 
+# macOS: 다운로드 격리(quarantine)와 ad-hoc 서명 문제를 자동 해소한다.
+# 미처리 시 Apple Silicon에서 Gatekeeper가 실행을 SIGKILL(exit 137)로 차단한다.
+if [ "$platform" = "darwin" ]; then
+  xattr -d com.apple.quarantine "$INSTALL_DIR/vc-funds" 2>/dev/null || true
+  if command -v codesign >/dev/null 2>&1; then
+    codesign --force --sign - "$INSTALL_DIR/vc-funds" 2>/dev/null || true
+  fi
+fi
+
 echo "설치 완료: $INSTALL_DIR/vc-funds"
 case ":$PATH:" in
   *":$INSTALL_DIR:"*) ;;
