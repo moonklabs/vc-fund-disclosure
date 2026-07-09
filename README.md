@@ -40,6 +40,26 @@ curl -fsSL https://raw.githubusercontent.com/moonklabs/vc-fund-disclosure/main/i
 
 실행 파일을 해석할 수 없으면 MCP 설정을 **등록하지 않고 NOT_READY**로 표시합니다.
 
+## 데이터 부트스트랩 (설치 다음 단계)
+
+`setup`만 실행하면 DB는 생기지만 **번들 시드(모태펀드 자조합 운용사 327개, 공공 개방 데이터)만** 들어 있습니다. 실제 검색·리서치에 쓰려면 온디맨드 수집으로 데이터를 채워야 합니다.
+
+```bash
+vc-funds setup --with-data --consent   # 설치 + KVIC 전체 분류코드 수집
+```
+
+**왜 시드만으로는 부족한가**: 이 저장소가 개발/검증에 쓰는 로컬 DB는 KVIC `fetch` + KVCA `fetch diva` + 공공데이터포털 `fetch datago`까지 누적해 투자사 500+, 펀드 1,200+ 규모입니다. 시드 327개는 그 일부입니다.
+
+**왜 DB를 통째로 배포하지 않는가**: KVIC on-demand fetch는 robots 고지 동의(`--consent`)가 필요한 대상이고, KVCA DIVA는 법정 전자공시라 재배포 경계가 다릅니다. 완성된 DB 스냅샷을 그대로 나눠주면 이 동의·라이선스 경계를 우회하게 되므로, **각 사용자가 자신의 동의로 직접 수집**하는 것이 설계 원칙입니다. 공공데이터포털 `fetch datago`만 서비스키 발급(공식 허가)만으로 게이트 없이 가능합니다.
+
+```bash
+# 개별 수집 (부분적으로만 필요할 때)
+vc-funds fetch kvic --list                 # 분류코드 29종
+vc-funds fetch kvic --code AA --consent    # 창업초기 펀드만
+vc-funds fetch diva --type tmly --consent  # KVCA 최신 결성·변경 공시
+vc-funds fetch datago --preset associations  # 공공데이터포털 API (동의 게이트 없음)
+```
+
 ## 기본 경로
 
 | 항목 | macOS/Linux | Windows |
