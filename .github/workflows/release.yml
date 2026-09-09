@@ -45,6 +45,9 @@ jobs:
             dist/${{ matrix.artifact }}
             dist/${{ matrix.artifact }}.sha256
           if-no-files-found: error
+          # These are only handoff files for the release job; published assets
+          # remain available in GitHub Releases after this short retention.
+          retention-days: 1
 
   # 릴리스 생성은 단일 잡에서 1회만 수행 (matrix 동시 생성 경합 방지)
   release:
